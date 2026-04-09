@@ -1,16 +1,24 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { BoardGrid } from '@/components/BoardGrid';
+import { BoardHeader } from '@/components/BoardHeader';
+import { ConfigModal } from '@/components/ConfigModal';
+import { ParticleBackground } from '@/components/ParticleBackground';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <ParticleBackground />
+      <div className="relative z-10 flex flex-col min-h-screen max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-4 gap-3">
+        <BoardHeader />
+        <div className="glass-panel flex-1 overflow-auto">
+          <BoardGrid />
+        </div>
+        <footer className="text-center text-[10px] text-muted-foreground/40 font-display tracking-widest py-1">
+          ULTIMATE PRIZE BOARD PRO
+        </footer>
+      </div>
+      <ConfigModal />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
