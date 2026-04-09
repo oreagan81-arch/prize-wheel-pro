@@ -1,4 +1,5 @@
 import { useBoardStore } from '@/store/boardStore';
+import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
 import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X } from 'lucide-react';
 import {
@@ -64,7 +65,7 @@ export const BoardHeader = () => {
             <div className="flex gap-1.5">
               <Button
                 size="sm"
-                onClick={confirmAssignment}
+                onClick={() => { confirmAssignment(); SFX.confirm(); }}
                 className="bg-neon-emerald/20 border border-neon-emerald/50 text-neon-emerald hover:bg-neon-emerald/30"
               >
                 <Check className="w-4 h-4 mr-1" />
