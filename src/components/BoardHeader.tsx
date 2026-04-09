@@ -105,7 +105,6 @@ export const BoardHeader = () => {
         </Button>
         <Button
           size="icon"
-          size-sm
           variant="ghost"
           onClick={() => setConfigOpen(true)}
           className="glass-panel border-white/10 text-muted-foreground hover:text-foreground"
