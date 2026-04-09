@@ -4,16 +4,19 @@ import { useCallback, useRef, useState } from 'react';
 import { SFX } from '@/lib/sfx';
 import { PrizeRevealOverlay } from './PrizeRevealOverlay';
 import confetti from 'canvas-confetti';
+import { Bomb } from 'lucide-react';
 
 interface BoardTileProps {
   tile: Tile;
 }
 
 export const BoardTile = ({ tile }: BoardTileProps) => {
-  const { selectionMode, selectedTiles, selectedStudent, toggleTileSelection, revealTile, prizes } = useBoardStore();
+  const { selectionMode, selectedTiles, selectedStudent, toggleTileSelection, revealTile, prizes, useSpins, spins } = useBoardStore();
   const ref = useRef<HTMLDivElement>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealedPrize, setRevealedPrize] = useState<{ name: string; emoji: string; rare: boolean } | null>(null);
+  const [showBomb, setShowBomb] = useState(false);
+  const [bombMessage, setBombMessage] = useState('');
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -45,9 +48,28 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     return selected;
   }, [prizes]);
 
+  const BOMB_EFFECTS = [
+    { msg: "💣 BOOM! Lost 2 spins!", spinsLost: 2 },
+    { msg: "💣 Oops! Lost 1 spin!", spinsLost: 1 },
+    { msg: "💣 Kaboom! Lose a turn!", spinsLost: 0 },
+    { msg: "💣 Lucky dud! No damage!", spinsLost: 0 },
+    { msg: "💣 Triple trap! Lost 3 spins!", spinsLost: 3 },
+  ];
+
   const handleClick = useCallback(() => {
     if (tile.state === 'assigned' && !selectionMode) {
-      // Click assigned tile to reveal
+      // Check for bomb
+      if (tile.isBomb) {
+        const effect = BOMB_EFFECTS[Math.floor(Math.random() * BOMB_EFFECTS.length)];
+        setBombMessage(effect.msg);
+        setShowBomb(true);
+        if (effect.spinsLost > 0) useSpins(effect.spinsLost);
+        revealTile(tile.id, '💣 BOMB');
+        SFX.error();
+        setTimeout(() => setShowBomb(false), 3000);
+        return;
+      }
+
       const prize = rollPrize();
       const emojiMatch = prize.name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
       const emoji = emojiMatch ? emojiMatch[0] : '🎁';
@@ -74,12 +96,18 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     } else {
       SFX.click();
     }
-  }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection, rollPrize, revealTile]);
+  }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection, rollPrize, revealTile, useSpins]);
 
   if (tile.state === 'revealed') {
     return (
-      <div className="aspect-square rounded-lg bg-void/80 border border-white/5 flex items-center justify-center void-pulse">
-        <span className="text-muted-foreground/40 font-display text-xs">{tile.id}</span>
+      <div className={`aspect-square rounded-lg flex items-center justify-center ${
+        tile.prize === '💣 BOMB' 
+          ? 'bg-destructive/20 border border-destructive/30' 
+          : 'bg-void/80 border border-white/5 void-pulse'
+      }`}>
+        <span className={`font-display text-xs ${tile.prize === '💣 BOMB' ? 'text-destructive/60' : 'text-muted-foreground/40'}`}>
+          {tile.prize === '💣 BOMB' ? '💣' : tile.id}
+        </span>
       </div>
     );
   }
@@ -108,6 +136,25 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
             studentName={tile.studentName || ''}
             isRare={revealedPrize.rare}
           />
+        )}
+        {showBomb && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            onClick={() => setShowBomb(false)}
+          >
+            <motion.div
+              animate={{ rotate: [0, -5, 5, -5, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 0.5, repeat: 2 }}
+              className="glass-panel-strong p-8 rounded-2xl text-center space-y-4"
+            >
+              <div className="text-7xl">💣</div>
+              <p className="text-destructive font-display text-xl">{bombMessage}</p>
+              <p className="text-muted-foreground text-sm">Tap to dismiss</p>
+            </motion.div>
+          </motion.div>
         )}
       </>
     );

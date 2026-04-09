@@ -4,8 +4,9 @@ import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
 import confetti from 'canvas-confetti';
-import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2 } from 'lucide-react';
+import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 type GameMode = 'idle' | 'trivia' | 'riddle' | 'gamble';
 type GamePhase = 'intro' | 'loading' | 'playing' | 'result';
@@ -22,6 +23,8 @@ const REAGAN_DISTRACTIONS = [
   "Reagan sees ALL...",
   "Time is merely an illusion...",
 ];
+
+const TIMER_DURATION = 15; // seconds — fairly intense for 4th graders
 
 interface AIQuestion {
   q: string;
@@ -43,34 +46,67 @@ export const ReaganGame = () => {
   const [riddle, setRiddle] = useState<{ riddle: string; answer: string } | null>(null);
   const [riddleRevealed, setRiddleRevealed] = useState(false);
 
+  // Timer
+  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Distractions
   const [distraction, setDistraction] = useState('');
   const [distractionVisible, setDistractionVisible] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  const startDistractTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    let timeLeft = Math.floor(Math.random() * 11) + 5;
-    timerRef.current = setInterval(() => {
-      timeLeft--;
-      if (timeLeft > 2 && Math.random() > 0.7) {
-        setDistraction(REAGAN_DISTRACTIONS[Math.floor(Math.random() * REAGAN_DISTRACTIONS.length)]);
-        setDistractionVisible(true);
-        setTimeout(() => setDistractionVisible(false), 2500);
-      }
-      if (timeLeft <= 0) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setDistraction('⚡ ANSWER NOW! ⚡');
-        setDistractionVisible(true);
-        SFX.error();
-      }
+  // Countdown timer effect
+  useEffect(() => {
+    if (!timerActive) return;
+    
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setTimerActive(false);
+          setTimerExpired(true);
+          setDistraction('⚡ TIME\'S UP! ⚡');
+          setDistractionVisible(true);
+          SFX.error();
+          return 0;
+        }
+        // Tick sound in last 5 seconds
+        if (prev <= 6) {
+          SFX.lottoTick(prev <= 3 ? 'E5' : 'C5');
+        }
+        // Random distractions
+        if (prev > 4 && Math.random() > 0.75) {
+          setDistraction(REAGAN_DISTRACTIONS[Math.floor(Math.random() * REAGAN_DISTRACTIONS.length)]);
+          setDistractionVisible(true);
+          setTimeout(() => setDistractionVisible(false), 2000);
+        }
+        return prev - 1;
+      });
     }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  const startTimer = useCallback(() => {
+    setTimeLeft(TIMER_DURATION);
+    setTimerExpired(false);
+    setTimerActive(true);
+    setDistractionVisible(false);
   }, []);
+
+  const stopTimer = useCallback(() => {
+    setTimerActive(false);
+    setDistractionVisible(false);
+  }, []);
+
+  const timerPercent = (timeLeft / TIMER_DURATION) * 100;
+  const timerColor = timeLeft <= 3 ? 'bg-destructive' : timeLeft <= 7 ? 'bg-neon-amber' : 'bg-neon-emerald';
 
   const startRandomMode = useCallback(async () => {
     await SFX.mystical();
@@ -79,16 +115,14 @@ export const ReaganGame = () => {
 
     const roll = Math.random();
     if (roll < 0.4) {
-      // Trivia with AI
       const data = await callPrizeBoardAI('reagan');
       if (data?.questions) {
         setQuestions(data.questions);
         setQIdx(0);
         setMode('trivia');
         setPhase('playing');
-        startDistractTimer();
+        startTimer();
       } else {
-        // Fallback
         setQuestions([
           { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
           { q: "How many sides does a dodecahedron have?", a: ["12", "10", "20"] },
@@ -97,38 +131,37 @@ export const ReaganGame = () => {
         setQIdx(0);
         setMode('trivia');
         setPhase('playing');
-        startDistractTimer();
+        startTimer();
       }
     } else if (roll < 0.7) {
-      // Riddle with AI
       const data = await callPrizeBoardAI('riddle');
       if (data?.riddle) {
         setRiddle(data);
         setRiddleRevealed(false);
         setMode('riddle');
         setPhase('playing');
+        startTimer();
       } else {
         setRiddle({ riddle: "I have cities, but no houses. I have mountains, but no trees. What am I?", answer: "A map" });
         setRiddleRevealed(false);
         setMode('riddle');
         setPhase('playing');
+        startTimer();
       }
     } else {
       setMode('gamble');
       setPhase('playing');
     }
-  }, [startDistractTimer]);
+  }, [startTimer]);
 
   const handleTriviaAnswer = useCallback(async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setDistractionVisible(false);
+    stopTimer();
     await SFX.click();
 
     if (qIdx < questions.length - 1) {
       setQIdx(qIdx + 1);
-      startDistractTimer();
+      startTimer();
     } else {
-      // Finished — weighted spin result like the reference
       const weights = [1,1, 2,2,2,2,2, 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3, 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4, 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5, 6,6,6,6,6,6,6,6, 7,7,7,7,7, 8,8, 9,9, 10];
       const earned = weights[Math.floor(Math.random() * weights.length)];
       setSpinsWon(earned);
@@ -140,9 +173,10 @@ export const ReaganGame = () => {
       }
       await SFX.prizeReveal();
     }
-  }, [qIdx, questions, addSpins, startDistractTimer]);
+  }, [qIdx, questions, addSpins, startTimer, stopTimer]);
 
   const handleRiddleCorrect = useCallback(async () => {
+    stopTimer();
     const earned = 3 + Math.floor(Math.random() * 3);
     setSpinsWon(earned);
     addSpins(earned);
@@ -150,15 +184,16 @@ export const ReaganGame = () => {
     setPhase('result');
     await SFX.prizeReveal();
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
-  }, [riddle, addSpins]);
+  }, [riddle, addSpins, stopTimer]);
 
   const handleRiddleWrong = useCallback(async () => {
+    stopTimer();
     setSpinsWon(1);
     addSpins(1);
     setMessage(`The answer was: ${riddle?.answer}. +1 consolation spin.`);
     setPhase('result');
     await SFX.error();
-  }, [riddle, addSpins]);
+  }, [riddle, addSpins, stopTimer]);
 
   const handleTakeGuaranteed = useCallback(async () => {
     setSpinsWon(2);
@@ -192,16 +227,51 @@ export const ReaganGame = () => {
   }, [addSpins]);
 
   const handleClose = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    stopTimer();
     setAiGameOpen(false);
     setMode('idle');
     setPhase('intro');
     setSpinsWon(0);
     setMessage('');
     setDistractionVisible(false);
+    setTimerExpired(false);
   };
 
   if (!aiGameOpen) return null;
+
+  const TimerBar = () => (
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }} 
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full mb-4"
+    >
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <Timer className={`w-4 h-4 ${timeLeft <= 5 ? 'text-destructive animate-pulse' : 'text-neon-amber'}`} />
+          <span className={`font-display text-sm tracking-wider ${timeLeft <= 5 ? 'text-destructive' : 'text-neon-amber'}`}>
+            {timeLeft}s
+          </span>
+        </div>
+        {timeLeft <= 5 && (
+          <motion.span 
+            animate={{ scale: [1, 1.2, 1] }} 
+            transition={{ repeat: Infinity, duration: 0.5 }}
+            className="text-xs font-display text-destructive"
+          >
+            HURRY!
+          </motion.span>
+        )}
+      </div>
+      <div className="w-full h-2 bg-card/80 rounded-full overflow-hidden border border-white/10">
+        <motion.div 
+          className={`h-full rounded-full ${timerColor} transition-colors duration-300`}
+          initial={{ width: '100%' }}
+          animate={{ width: `${timerPercent}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+    </motion.div>
+  );
 
   return (
     <AnimatePresence>
@@ -231,12 +301,14 @@ export const ReaganGame = () => {
 
           {/* Distraction overlay */}
           <AnimatePresence>
-            {distractionVisible && phase === 'playing' && mode === 'trivia' && (
+            {distractionVisible && phase === 'playing' && (mode === 'trivia' || mode === 'riddle') && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="absolute top-0 left-0 right-0 text-neon-amber/80 italic text-sm font-display z-20"
+                className={`absolute top-0 left-0 right-0 italic text-sm font-display z-20 ${
+                  timerExpired ? 'text-destructive font-bold text-lg' : 'text-neon-amber/80'
+                }`}
               >
                 "{distraction}"
               </motion.div>
@@ -273,8 +345,14 @@ export const ReaganGame = () => {
           {/* Trivia */}
           {phase === 'playing' && mode === 'trivia' && questions.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
+              <TimerBar />
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground font-display">TRIAL {qIdx + 1}/{questions.length}</span>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: questions.length }).map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= qIdx ? 'bg-neon-purple' : 'bg-white/20'}`} />
+                  ))}
+                </div>
               </div>
               <p className="text-foreground font-semibold text-lg">{questions[qIdx].q}</p>
               <div className="grid grid-cols-1 gap-2">
@@ -283,25 +361,34 @@ export const ReaganGame = () => {
                     key={i}
                     variant="ghost"
                     onClick={handleTriviaAnswer}
-                    className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3"
+                    disabled={timerExpired}
+                    className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3 disabled:opacity-40"
                   >
                     {opt}
                   </Button>
                 ))}
               </div>
+              {timerExpired && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Button onClick={handleTriviaAnswer} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
+                    <Zap className="w-4 h-4 mr-1" /> Continue (Penalty!)
+                  </Button>
+                </motion.div>
+              )}
             </motion.div>
           )}
 
           {/* Riddle */}
           {phase === 'playing' && mode === 'riddle' && riddle && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
+              <TimerBar />
               <div className="flex items-center gap-2 mb-2">
                 <HelpCircle className="w-5 h-5 text-neon-amber" />
                 <span className="text-xs text-muted-foreground font-display">RIDDLE CHALLENGE</span>
               </div>
               <p className="text-foreground font-semibold text-lg italic">"{riddle.riddle}"</p>
               {!riddleRevealed ? (
-                <Button onClick={() => setRiddleRevealed(true)} className="bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30">
+                <Button onClick={() => { setRiddleRevealed(true); stopTimer(); }} className="bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30">
                   Reveal Answer
                 </Button>
               ) : (
