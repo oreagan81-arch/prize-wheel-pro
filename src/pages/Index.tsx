@@ -2,6 +2,8 @@ import { BoardGrid } from '@/components/BoardGrid';
 import { BoardHeader } from '@/components/BoardHeader';
 import { ConfigModal } from '@/components/ConfigModal';
 import { ParticleBackground } from '@/components/ParticleBackground';
+import { LottoWheel } from '@/components/LottoWheel';
+import { ReaganGame } from '@/components/ReaganGame';
 
 const Index = () => {
   return (
@@ -17,6 +19,8 @@ const Index = () => {
         </footer>
       </div>
       <ConfigModal />
+      <LottoWheel />
+      <ReaganGame />
     </div>
   );
 };
