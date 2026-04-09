@@ -1,7 +1,8 @@
 import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X } from 'lucide-react';
+import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw } from 'lucide-react';
+import { InventoryPanel } from './InventoryPanel';
 import {
   Select,
   SelectContent,
@@ -9,6 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export const BoardHeader = () => {
   const {
@@ -22,6 +34,7 @@ export const BoardHeader = () => {
     setConfigOpen,
     setLottoOpen,
     setAiGameOpen,
+    initBoard,
   } = useBoardStore();
 
   return (
@@ -89,21 +102,25 @@ export const BoardHeader = () => {
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => setAiGameOpen(true)}
+          onClick={() => { setAiGameOpen(true); SFX.mystical(); }}
           className="glass-panel border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10 hover:text-neon-purple"
         >
           <Zap className="w-4 h-4 mr-1" />
-          <span className="hidden sm:inline">AI Game</span>
+          <span className="hidden sm:inline">🔮 Reagan</span>
         </Button>
         <Button
           size="sm"
           variant="ghost"
           onClick={() => setLottoOpen(true)}
-          className="glass-panel border-neon-amber/30 text-neon-amber hover:bg-neon-amber/10 hover:text-neon-amber"
+          disabled={spins < 1}
+          className="glass-panel border-neon-amber/30 text-neon-amber hover:bg-neon-amber/10 hover:text-neon-amber disabled:opacity-30"
         >
           <Dices className="w-4 h-4 mr-1" />
           <span className="hidden sm:inline">Lotto</span>
         </Button>
+        
+        <InventoryPanel />
+
         <Button
           size="icon"
           variant="ghost"
@@ -112,6 +129,30 @@ export const BoardHeader = () => {
         >
           <Settings className="w-4 h-4" />
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="glass-panel border-destructive/20 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="glass-panel-strong border-white/10">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-foreground">ERASE DATA?</AlertDialogTitle>
+              <AlertDialogDescription>This will destroy the entire board and reset all spins. This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="glass-panel border-white/10">Abort Reset</AlertDialogCancel>
+              <AlertDialogAction onClick={initBoard} className="bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30">
+                Destroy Board
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </header>
   );
