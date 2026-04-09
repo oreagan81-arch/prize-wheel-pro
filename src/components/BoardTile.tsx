@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useBoardStore, type Tile } from '@/store/boardStore';
 import { useCallback, useRef } from 'react';
+import { SFX } from '@/lib/sfx';
 
 interface BoardTileProps {
   tile: Tile;
@@ -32,9 +33,17 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
   const handleClick = useCallback(() => {
     if (tile.state !== 'empty') return;
     if (selectionMode && selectedStudent) {
+      const wasSelected = selectedTiles.includes(tile.id);
       toggleTileSelection(tile.id);
+      if (wasSelected) {
+        SFX.deselect();
+      } else {
+        SFX.select();
+      }
+    } else {
+      SFX.click();
     }
-  }, [tile, selectionMode, selectedStudent, toggleTileSelection]);
+  }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection]);
 
   if (tile.state === 'revealed') {
     return (
