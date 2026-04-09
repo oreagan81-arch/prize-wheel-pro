@@ -8,8 +8,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Trophy, RotateCcw } from 'lucide-react';
+import { Users, Trophy, RotateCcw, Wand2, Loader2 } from 'lucide-react';
+import { callPrizeBoardAI } from '@/lib/ai';
+import { SFX } from '@/lib/sfx';
 
 function parseRoster(raw: string): string[] {
   const lines = raw
@@ -17,13 +20,11 @@ function parseRoster(raw: string): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // Extract first names
   const firstNames = lines.map((line) => {
     const parts = line.split(/\s+/);
     return { first: parts[0], lastInitial: parts[1]?.[0]?.toUpperCase() || '' };
   });
 
-  // Count duplicates
   const counts: Record<string, number> = {};
   firstNames.forEach((n) => {
     counts[n.first] = (counts[n.first] || 0) + 1;
@@ -37,12 +38,35 @@ function parseRoster(raw: string): string[] {
 }
 
 export const ConfigModal = () => {
-  const { configOpen, setConfigOpen, roster, setRoster, initBoard } = useBoardStore();
+  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes } = useBoardStore();
   const [rosterText, setRosterText] = useState(roster.join('\n'));
+  const [themeInput, setThemeInput] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const handleSaveRoster = () => {
     const parsed = parseRoster(rosterText);
     setRoster(parsed);
+  };
+
+  const handleGenerateTheme = async () => {
+    if (!themeInput.trim()) return;
+    setGenerating(true);
+    try {
+      const data = await callPrizeBoardAI('theme', themeInput.trim());
+      if (data?.prizes && Array.isArray(data.prizes)) {
+        const mapped = data.prizes.map((p: any) => ({
+          name: `${p.emoji || '🎁'} ${p.name}`,
+          weight: p.count || 5,
+          tier: p.rare ? 'legendary' as const : (p.count <= 5 ? 'rare' as const : 'common' as const),
+        }));
+        regeneratePrizes(mapped);
+        await SFX.prizeReveal();
+      }
+    } catch (err) {
+      console.error('Theme generation failed:', err);
+      await SFX.error();
+    }
+    setGenerating(false);
   };
 
   return (
@@ -83,10 +107,30 @@ export const ConfigModal = () => {
           </TabsContent>
 
           <TabsContent value="prizes" className="space-y-3 mt-3">
-            <p className="text-xs text-muted-foreground">
-              Prize economy is pre-configured. Customization coming soon.
-            </p>
-            <div className="space-y-1.5">
+            {/* AI Theme Generator */}
+            <div className="glass-panel p-3 rounded-xl space-y-2 border-neon-purple/20">
+              <p className="text-xs font-display text-neon-purple tracking-wide">✨ AI REWARD THEME GENERATOR</p>
+              <p className="text-[10px] text-muted-foreground">Enter a theme and AI will create a full reward set! (Resets board)</p>
+              <div className="flex gap-2">
+                <Input
+                  value={themeInput}
+                  onChange={(e) => setThemeInput(e.target.value)}
+                  placeholder="e.g. Space, Dinosaurs, Superheroes..."
+                  className="bg-card/60 border-white/10 text-foreground text-sm flex-1"
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateTheme()}
+                />
+                <Button
+                  onClick={handleGenerateTheme}
+                  disabled={generating || !themeInput.trim()}
+                  className="bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple/30"
+                >
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">Current prize pool:</p>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {useBoardStore.getState().prizes.map((p, i) => (
                 <div
                   key={i}

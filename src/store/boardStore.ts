@@ -1,17 +1,18 @@
 import { create } from 'zustand';
 
-export type TileState = 'empty' | 'assigned' | 'revealed';
+export type TileState = 'empty' | 'assigned' | 'revealed' | 'bomb';
 
 export interface Tile {
   id: number;
   state: TileState;
   studentName?: string;
   prize?: string;
+  isBomb?: boolean;
 }
 
 export interface Prize {
   name: string;
-  weight: number; // higher = more common
+  weight: number;
   tier: 'legendary' | 'rare' | 'common';
 }
 
@@ -41,6 +42,7 @@ interface BoardState {
   setLottoOpen: (open: boolean) => void;
   setAiGameOpen: (open: boolean) => void;
   setPrizes: (prizes: Prize[]) => void;
+  regeneratePrizes: (newPrizes: Prize[]) => void;
 }
 
 const defaultPrizes: Prize[] = [
@@ -53,10 +55,13 @@ const defaultPrizes: Prize[] = [
   { name: '✨ +5 Stamps', weight: 25, tier: 'common' },
 ];
 
+const BOMB_CHANCE = 0.05; // 5% of tiles are bombs
+
 const createEmptyTiles = (): Tile[] =>
   Array.from({ length: 100 }, (_, i) => ({
     id: i + 1,
     state: 'empty' as TileState,
+    isBomb: Math.random() < BOMB_CHANCE,
   }));
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -120,4 +125,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   setLottoOpen: (open) => set({ lottoOpen: open }),
   setAiGameOpen: (open) => set({ aiGameOpen: open }),
   setPrizes: (prizes) => set({ prizes }),
+
+  regeneratePrizes: (newPrizes) => set({ prizes: newPrizes, tiles: createEmptyTiles(), spins: 0 }),
 }));
