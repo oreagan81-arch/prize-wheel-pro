@@ -1,4 +1,4 @@
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
 import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw } from 'lucide-react';
@@ -24,6 +24,8 @@ import {
 
 export const BoardHeader = () => {
   const {
+    currentClass,
+    switchClass,
     roster,
     spins,
     selectedStudent,
@@ -45,6 +47,23 @@ export const BoardHeader = () => {
         <h1 className="text-lg sm:text-xl font-display font-bold tracking-wider bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-purple bg-clip-text text-transparent">
           PRIZE BOARD PRO
         </h1>
+      </div>
+
+      {/* Class Switcher */}
+      <div className="flex gap-1 glass-panel p-1 rounded-xl">
+        {CLASS_NAMES.map((cls) => (
+          <button
+            key={cls}
+            onClick={() => { switchClass(cls); SFX.click(); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-display font-bold tracking-wide transition-all ${
+              currentClass === cls
+                ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 shadow-lg shadow-neon-cyan/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
+          >
+            {classLabels[cls]}
+          </button>
+        ))}
       </div>
 
       {/* Spins counter */}

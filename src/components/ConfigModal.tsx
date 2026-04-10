@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, classLabels } from '@/store/boardStore';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ function parseRoster(raw: string): string[] {
 }
 
 export const ConfigModal = () => {
-  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes } = useBoardStore();
+  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes, currentClass } = useBoardStore();
   const [rosterText, setRosterText] = useState(roster.join('\n'));
   const [themeInput, setThemeInput] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -74,7 +74,7 @@ export const ConfigModal = () => {
       <DialogContent className="glass-panel-strong border-white/10 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-display text-lg tracking-wide text-foreground">
-            Board Configuration
+            {classLabels[currentClass]} — Configuration
           </DialogTitle>
         </DialogHeader>
 
