@@ -126,3 +126,88 @@
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.7; }
 }
+
+/* Reagan the Magnificent animations */
+@keyframes crystalBallGlow {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsl(var(--neon-purple) / 0.3), 0 0 60px hsl(var(--neon-purple) / 0.15), inset 0 0 30px hsl(var(--neon-cyan) / 0.2);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 40px hsl(var(--neon-purple) / 0.6), 0 0 100px hsl(var(--neon-purple) / 0.3), inset 0 0 50px hsl(var(--neon-cyan) / 0.4);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes crystalBallSwirl {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes lightningFlash {
+  0% { opacity: 0; }
+  5% { opacity: 1; }
+  10% { opacity: 0; }
+  15% { opacity: 0.8; }
+  20% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes lightningBolt {
+  0% { transform: scaleY(0); opacity: 0; }
+  10% { transform: scaleY(1); opacity: 1; }
+  30% { transform: scaleY(1); opacity: 0.8; }
+  50% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes spitefulDance {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  15% { transform: translateY(-12px) rotate(-8deg); }
+  30% { transform: translateY(0) rotate(8deg); }
+  45% { transform: translateY(-8px) rotate(-5deg); }
+  60% { transform: translateY(0) rotate(5deg); }
+  75% { transform: translateY(-4px) rotate(-3deg); }
+}
+
+@keyframes reaganFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, -2px); }
+  20% { transform: translate(4px, 2px); }
+  30% { transform: translate(-3px, 3px); }
+  40% { transform: translate(3px, -3px); }
+  50% { transform: translate(-2px, 2px); }
+}
+
+.crystal-ball-glow {
+  animation: crystalBallGlow 2s ease-in-out infinite;
+}
+
+.crystal-swirl {
+  animation: crystalBallSwirl 4s linear infinite;
+}
+
+.lightning-flash {
+  animation: lightningFlash 0.6s ease-out;
+}
+
+.lightning-bolt {
+  animation: lightningBolt 0.8s ease-out;
+}
+
+.spiteful-dance {
+  animation: spitefulDance 0.8s ease-in-out 3;
+}
+
+.reagan-float {
+  animation: reaganFloat 3s ease-in-out infinite;
+}
+
+.screen-shake {
+  animation: screenShake 0.5s ease-out;
+}
