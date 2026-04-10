@@ -119,4 +119,41 @@ export const SFX = {
     chordSynth.triggerAttackRelease(['D4', 'F#4', 'A4'], '2n', now);
     chordSynth.triggerAttackRelease(['E4', 'G#4', 'B4'], '2n', now + 0.4);
   },
+
+  /** Lightning strike on wrong answer */
+  lightning: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    // Thunder crack
+    suspenseSynth.triggerAttackRelease('C2', '16n', now);
+    clickSynth.triggerAttackRelease('G1', '32n', now + 0.05);
+    suspenseSynth.triggerAttackRelease('D2', '16n', now + 0.15);
+  },
+
+  /** Spiteful Reagan cackle - descending evil tones */
+  spitefulLaugh: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    selectSynth.triggerAttackRelease('E5', '16n', now);
+    selectSynth.triggerAttackRelease('C5', '16n', now + 0.12);
+    selectSynth.triggerAttackRelease('A4', '16n', now + 0.24);
+    selectSynth.triggerAttackRelease('E4', '8n', now + 0.36);
+    chordSynth.triggerAttackRelease(['A3', 'C4', 'E4'], '4n', now + 0.5);
+  },
+
+  /** Reluctant grumble when giving spins */
+  reluctantGive: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    suspenseSynth.triggerAttackRelease('E3', '8n', now);
+    suspenseSynth.triggerAttackRelease('Eb3', '8n', now + 0.2);
+    suspenseSynth.triggerAttackRelease('D3', '4n', now + 0.4);
+  },
+
+  /** Crystal ball hum */
+  crystalHum: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    chordSynth.triggerAttackRelease(['A3', 'E4'], '1n', now);
+  },
 };
