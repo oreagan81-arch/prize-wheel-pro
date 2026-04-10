@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, classLabels } from '@/store/boardStore';
 import {
   Dialog,
   DialogContent,
