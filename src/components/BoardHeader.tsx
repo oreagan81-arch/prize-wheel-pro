@@ -1,4 +1,4 @@
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
 import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw } from 'lucide-react';
@@ -24,6 +24,8 @@ import {
 
 export const BoardHeader = () => {
   const {
+    currentClass,
+    switchClass,
     roster,
     spins,
     selectedStudent,
