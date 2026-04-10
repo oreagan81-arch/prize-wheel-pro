@@ -49,6 +49,23 @@ export const BoardHeader = () => {
         </h1>
       </div>
 
+      {/* Class Switcher */}
+      <div className="flex gap-1 glass-panel p-1 rounded-xl">
+        {CLASS_NAMES.map((cls) => (
+          <button
+            key={cls}
+            onClick={() => { switchClass(cls); SFX.click(); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-display font-bold tracking-wide transition-all ${
+              currentClass === cls
+                ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 shadow-lg shadow-neon-cyan/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
+          >
+            {classLabels[cls]}
+          </button>
+        ))}
+      </div>
+
       {/* Spins counter */}
       <div className="glass-panel px-3 py-1.5 flex items-center gap-2 neon-glow-amber">
         <Dices className="w-4 h-4 text-neon-amber" />
