@@ -38,7 +38,7 @@ function parseRoster(raw: string): string[] {
 }
 
 export const ConfigModal = () => {
-  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes } = useBoardStore();
+  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes, currentClass } = useBoardStore();
   const [rosterText, setRosterText] = useState(roster.join('\n'));
   const [themeInput, setThemeInput] = useState('');
   const [generating, setGenerating] = useState(false);
