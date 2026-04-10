@@ -74,7 +74,7 @@ export const ConfigModal = () => {
       <DialogContent className="glass-panel-strong border-white/10 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-display text-lg tracking-wide text-foreground">
-            Board Configuration
+            {classLabels[currentClass]} — Configuration
           </DialogTitle>
         </DialogHeader>
 
