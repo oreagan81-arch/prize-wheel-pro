@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBoardStore, classLabels } from '@/store/boardStore';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Trophy, RotateCcw, Wand2, Loader2 } from 'lucide-react';
+import { Users, Trophy, RotateCcw, Wand2, Loader2, BookOpen } from 'lucide-react';
 import { callPrizeBoardAI } from '@/lib/ai';
 import { SFX } from '@/lib/sfx';
 
@@ -38,14 +38,26 @@ function parseRoster(raw: string): string[] {
 }
 
 export const ConfigModal = () => {
-  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes, currentClass } = useBoardStore();
+  const { configOpen, setConfigOpen, roster, setRoster, initBoard, regeneratePrizes, currentClass, curriculumTopic, setCurriculumTopic } = useBoardStore();
   const [rosterText, setRosterText] = useState(roster.join('\n'));
   const [themeInput, setThemeInput] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [topicInput, setTopicInput] = useState(curriculumTopic);
+
+  // Sync roster text when class changes
+  useEffect(() => {
+    setRosterText(roster.join('\n'));
+    setTopicInput(curriculumTopic);
+  }, [roster, curriculumTopic]);
 
   const handleSaveRoster = () => {
     const parsed = parseRoster(rosterText);
     setRoster(parsed);
+  };
+
+  const handleSaveTopic = () => {
+    setCurriculumTopic(topicInput);
+    SFX.confirm();
   };
 
   const handleGenerateTheme = async () => {
@@ -88,6 +100,10 @@ export const ConfigModal = () => {
               <Trophy className="w-4 h-4 mr-1.5" />
               Prizes
             </TabsTrigger>
+            <TabsTrigger value="curriculum" className="flex-1 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">
+              <BookOpen className="w-4 h-4 mr-1.5" />
+              Curriculum
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="roster" className="space-y-3 mt-3">
@@ -107,7 +123,6 @@ export const ConfigModal = () => {
           </TabsContent>
 
           <TabsContent value="prizes" className="space-y-3 mt-3">
-            {/* AI Theme Generator */}
             <div className="glass-panel p-3 rounded-xl space-y-2 border-neon-purple/20">
               <p className="text-xs font-display text-neon-purple tracking-wide">✨ AI REWARD THEME GENERATOR</p>
               <p className="text-[10px] text-muted-foreground">Enter a theme and AI will create a full reward set! (Resets board)</p>
@@ -154,6 +169,48 @@ export const ConfigModal = () => {
                   </span>
                 </div>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="curriculum" className="space-y-3 mt-3">
+            <div className="glass-panel p-4 rounded-xl space-y-3 border-neon-cyan/20">
+              <p className="text-xs font-display text-neon-cyan tracking-wide">📚 CURRICULUM INTELLIGENCE</p>
+              <p className="text-[10px] text-muted-foreground">
+                Set a topic focus for Reagan's Scholarly Sprint questions. Reagan already knows Saxon Math, 
+                Shurley English Level 4, Core Knowledge, and Reading Mastery Transformations.
+              </p>
+              <Input
+                value={topicInput}
+                onChange={(e) => setTopicInput(e.target.value)}
+                placeholder="e.g. The Water Cycle, Fractions, Medieval Europe..."
+                className="bg-card/60 border-white/10 text-foreground text-sm"
+              />
+              <Button onClick={handleSaveTopic} className="w-full bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/30">
+                <BookOpen className="w-4 h-4 mr-1.5" />
+                Set Curriculum Focus
+              </Button>
+              {curriculumTopic && (
+                <p className="text-xs text-neon-cyan/60">
+                  Current focus: <span className="font-bold">{curriculumTopic}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="glass-panel p-3 rounded-xl border-white/5">
+              <p className="text-[10px] font-display text-muted-foreground uppercase tracking-wider mb-2">Built-in Programs</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { name: 'Saxon Math', emoji: '🔢' },
+                  { name: 'Shurley English L4', emoji: '📝' },
+                  { name: 'Core Knowledge', emoji: '🌍' },
+                  { name: 'Reading Mastery', emoji: '📖' },
+                ].map((prog) => (
+                  <div key={prog.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70 bg-card/40 rounded px-2 py-1">
+                    <span>{prog.emoji}</span>
+                    <span>{prog.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>

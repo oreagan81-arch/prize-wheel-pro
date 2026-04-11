@@ -4,7 +4,7 @@ import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
 import confetti from 'canvas-confetti';
-import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap } from 'lucide-react';
+import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap, GraduationCap, Brain, Infinity as InfinityIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import reaganDefault from '@/assets/reagan-magnificent.png';
@@ -13,8 +13,8 @@ import reaganThinking from '@/assets/reagan-thinking.png';
 import reaganSpiteful from '@/assets/reagan-spiteful.png';
 import reaganReluctant from '@/assets/reagan-reluctant.png';
 
-type GameMode = 'idle' | 'trivia' | 'riddle' | 'gamble';
-type GamePhase = 'intro' | 'loading' | 'playing' | 'result';
+type GameMode = 'idle' | 'scholarly_sprint' | 'voids_paradox' | 'mind_bender' | 'gamble';
+type GamePhase = 'intro' | 'mode_select' | 'loading' | 'playing' | 'result';
 type ReaganMood = 'default' | 'thinking' | 'shocked' | 'spiteful' | 'reluctant';
 
 const REAGAN_DISTRACTIONS = [
@@ -58,6 +58,33 @@ const MOOD_IMAGES: Record<ReaganMood, string> = {
   reluctant: reaganReluctant,
 };
 
+const MODE_CONFIG = {
+  scholarly_sprint: {
+    label: 'Scholarly Sprint',
+    icon: <GraduationCap className="w-5 h-5" />,
+    color: 'text-neon-emerald',
+    borderColor: 'border-neon-emerald/50',
+    bgColor: 'bg-neon-emerald/20',
+    description: 'Curriculum trivia from Saxon Math, Shurley English & Core Knowledge',
+  },
+  voids_paradox: {
+    label: "Void's Paradox",
+    icon: <InfinityIcon className="w-5 h-5" />,
+    color: 'text-neon-purple',
+    borderColor: 'border-neon-purple/50',
+    bgColor: 'bg-neon-purple/20',
+    description: 'Impossible-sounding nonsense questions — all answers are equally absurd!',
+  },
+  mind_bender: {
+    label: 'The Mind-Bender',
+    icon: <Brain className="w-5 h-5" />,
+    color: 'text-neon-amber',
+    borderColor: 'border-neon-amber/50',
+    bgColor: 'bg-neon-amber/20',
+    description: 'Logic riddles & lateral thinking puzzles',
+  },
+};
+
 interface AIQuestion {
   q: string;
   a: string[];
@@ -71,29 +98,24 @@ const CrystalBallLoader = () => (
     className="flex flex-col items-center space-y-4"
   >
     <div className="relative">
-      {/* Outer glow ring */}
       <div className="absolute inset-0 rounded-full crystal-ball-glow" style={{ width: 120, height: 120 }} />
-      {/* Crystal ball */}
       <div
         className="relative w-[120px] h-[120px] rounded-full crystal-ball-glow overflow-hidden"
         style={{
           background: 'radial-gradient(circle at 35% 35%, hsl(var(--neon-cyan) / 0.4), hsl(var(--neon-purple) / 0.6), hsl(var(--neon-purple) / 0.2))',
         }}
       >
-        {/* Inner swirling mist */}
         <div
           className="absolute inset-2 rounded-full crystal-swirl opacity-40"
           style={{
             background: 'conic-gradient(from 0deg, transparent, hsl(var(--neon-cyan) / 0.5), transparent, hsl(var(--neon-purple) / 0.5), transparent)',
           }}
         />
-        {/* Highlight */}
         <div
           className="absolute top-3 left-5 w-6 h-4 rounded-full opacity-60"
           style={{ background: 'radial-gradient(ellipse, white 0%, transparent 70%)' }}
         />
       </div>
-      {/* Base */}
       <div className="mx-auto w-16 h-3 rounded-b-full mt-[-2px]" style={{ background: 'linear-gradient(to bottom, hsl(var(--neon-purple) / 0.5), hsl(var(--neon-purple) / 0.2))' }} />
     </div>
     <motion.p
@@ -111,7 +133,6 @@ const LightningOverlay = ({ active }: { active: boolean }) => (
   <AnimatePresence>
     {active && (
       <>
-        {/* Screen flash */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1, 0, 0.7, 0] }}
@@ -119,7 +140,6 @@ const LightningOverlay = ({ active }: { active: boolean }) => (
           className="fixed inset-0 z-[60] pointer-events-none"
           style={{ background: 'hsl(var(--neon-purple) / 0.3)' }}
         />
-        {/* Lightning bolts */}
         {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
@@ -165,7 +185,6 @@ const ReaganAvatar = ({ mood, size = 'md' }: { mood: ReaganMood; size?: 'sm' | '
         width={512}
         height={512}
       />
-      {/* Mood aura */}
       <div
         className={`absolute inset-0 rounded-full blur-xl opacity-30 -z-10 ${
           mood === 'spiteful' ? 'bg-neon-amber' :
@@ -180,7 +199,7 @@ const ReaganAvatar = ({ mood, size = 'md' }: { mood: ReaganMood; size?: 'sm' | '
 
 /* ─── Main Component ─── */
 export const ReaganGame = () => {
-  const { aiGameOpen, setAiGameOpen, addSpins } = useBoardStore();
+  const { aiGameOpen, setAiGameOpen, addSpins, curriculumTopic } = useBoardStore();
   const [mode, setMode] = useState<GameMode>('idle');
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [message, setMessage] = useState('');
@@ -190,11 +209,11 @@ export const ReaganGame = () => {
   const [screenShake, setScreenShake] = useState(false);
   const [reaganQuote, setReaganQuote] = useState('');
 
-  // Trivia
+  // Trivia (Scholarly Sprint & Void's Paradox)
   const [questions, setQuestions] = useState<AIQuestion[]>([]);
   const [qIdx, setQIdx] = useState(0);
 
-  // Riddle
+  // Riddle (Mind-Bender)
   const [riddle, setRiddle] = useState<{ riddle: string; answer: string } | null>(null);
   const [riddleRevealed, setRiddleRevealed] = useState(false);
 
@@ -207,7 +226,6 @@ export const ReaganGame = () => {
   const [distraction, setDistraction] = useState('');
   const [distractionVisible, setDistractionVisible] = useState(false);
 
-  // Countdown timer effect
   useEffect(() => {
     if (!timerActive) return;
     const interval = setInterval(() => {
@@ -258,58 +276,57 @@ export const ReaganGame = () => {
   const timerPercent = (timeLeft / TIMER_DURATION) * 100;
   const timerColor = timeLeft <= 3 ? 'bg-destructive' : timeLeft <= 7 ? 'bg-neon-amber' : 'bg-neon-emerald';
 
-  const startRandomMode = useCallback(async () => {
+  const startMode = useCallback(async (chosenMode: 'scholarly_sprint' | 'voids_paradox' | 'mind_bender') => {
+    setMode(chosenMode);
     setMood('thinking');
     await SFX.mystical();
     await SFX.crystalHum();
     setPhase('loading');
     setDistractionVisible(false);
 
-    const roll = Math.random();
-    if (roll < 0.4) {
-      const data = await callPrizeBoardAI('reagan');
+    if (chosenMode === 'scholarly_sprint' || chosenMode === 'voids_paradox') {
+      const data = await callPrizeBoardAI(chosenMode, undefined, curriculumTopic || undefined);
       if (data?.questions) {
         setQuestions(data.questions);
         setQIdx(0);
-        setMode('trivia');
         setPhase('playing');
         setMood('default');
         startTimer();
       } else {
-        setQuestions([
+        // Fallback questions
+        const fallback = chosenMode === 'voids_paradox' ? [
+          { q: "If a shadow weighs 3 ounces, how many shadows can fit in a gallon?", a: ["42 shadow-gallons", "None, shadows are metric", "Only on Tuesdays"] },
+          { q: "What is the square root of a whisper?", a: ["Silent geometry", "0.003 decibels", "A smaller whisper"] },
+          { q: "If history runs backwards, who discovered America last?", a: ["The fish", "Christopher Reverse", "No one yet"] },
+        ] : [
           { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
-          { q: "How many sides does a dodecahedron have?", a: ["12", "10", "20"] },
-          { q: "What color is a giraffe's tongue?", a: ["Purple/Black", "Pink", "Red"] },
-        ]);
+          { q: "In Shurley English, what part of speech modifies a verb?", a: ["Adverb", "Adjective", "Pronoun"] },
+          { q: "How many sides does a hexagon have?", a: ["6", "8", "5"] },
+        ];
+        setQuestions(fallback);
         setQIdx(0);
-        setMode('trivia');
         setPhase('playing');
         setMood('default');
         startTimer();
       }
-    } else if (roll < 0.7) {
-      const data = await callPrizeBoardAI('riddle');
+    } else {
+      // Mind-Bender
+      const data = await callPrizeBoardAI('mind_bender');
       if (data?.riddle) {
         setRiddle(data);
         setRiddleRevealed(false);
-        setMode('riddle');
         setPhase('playing');
         setMood('default');
         startTimer();
       } else {
         setRiddle({ riddle: "I have cities, but no houses. I have mountains, but no trees. What am I?", answer: "A map" });
         setRiddleRevealed(false);
-        setMode('riddle');
         setPhase('playing');
         setMood('default');
         startTimer();
       }
-    } else {
-      setMode('gamble');
-      setPhase('playing');
-      setMood('default');
     }
-  }, [startTimer]);
+  }, [curriculumTopic, startTimer]);
 
   const handleTriviaAnswer = useCallback(async () => {
     stopTimer();
@@ -323,7 +340,6 @@ export const ReaganGame = () => {
       const earned = weights[Math.floor(Math.random() * weights.length)];
       setSpinsWon(earned);
       addSpins(earned);
-      // Reagan is reluctant to give spins
       setMood('reluctant');
       setReaganQuote(RELUCTANT_QUOTES[Math.floor(Math.random() * RELUCTANT_QUOTES.length)]);
       setMessage(`+${earned} spins wrested from Reagan's grasp!`);
@@ -350,7 +366,6 @@ export const ReaganGame = () => {
 
   const handleRiddleWrong = useCallback(async () => {
     stopTimer();
-    // Reagan is SPITEFUL - victory dance!
     setMood('spiteful');
     setReaganQuote(SPITEFUL_QUOTES[Math.floor(Math.random() * SPITEFUL_QUOTES.length)]);
     await triggerLightning();
@@ -419,6 +434,8 @@ export const ReaganGame = () => {
 
   if (!aiGameOpen) return null;
 
+  const currentModeConfig = mode !== 'idle' && mode !== 'gamble' ? MODE_CONFIG[mode] : null;
+
   const TimerBar = () => (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="w-full mb-4">
       <div className="flex items-center justify-between mb-1.5">
@@ -467,6 +484,12 @@ export const ReaganGame = () => {
             <h2 className="font-display text-xl sm:text-2xl tracking-widest text-neon-purple mt-3">
               REAGAN THE MAGNIFICENT
             </h2>
+            {currentModeConfig && phase === 'playing' && (
+              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`flex items-center gap-2 mt-2 ${currentModeConfig.color}`}>
+                {currentModeConfig.icon}
+                <span className="font-display text-xs uppercase tracking-widest">{currentModeConfig.label}</span>
+              </motion.div>
+            )}
             {phase === 'intro' && (
               <p className="text-muted-foreground/60 text-xs italic mt-1">"{REAGAN_DISTRACTIONS[Math.floor(Math.random() * 3)]}"</p>
             )}
@@ -474,7 +497,7 @@ export const ReaganGame = () => {
 
           {/* Distraction overlay */}
           <AnimatePresence>
-            {distractionVisible && phase === 'playing' && (mode === 'trivia' || mode === 'riddle') && (
+            {distractionVisible && phase === 'playing' && (mode === 'scholarly_sprint' || mode === 'voids_paradox' || mode === 'mind_bender') && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -486,21 +509,36 @@ export const ReaganGame = () => {
             )}
           </AnimatePresence>
 
-          {/* Intro */}
+          {/* Intro — Mode Select */}
           {phase === 'intro' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              <p className="text-muted-foreground italic">Piercing the veil of reality...</p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button
-                  onClick={startRandomMode}
-                  className="bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple/30 font-display text-lg px-8 py-4"
-                >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  ✨ Get Blessing
-                </Button>
-                <Button variant="ghost" onClick={handleClose} className="text-muted-foreground hover:text-foreground">
-                  Return
-                </Button>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+              <p className="text-muted-foreground italic text-sm">Choose your trial, mortal...</p>
+              <div className="grid grid-cols-1 gap-3">
+                {(Object.entries(MODE_CONFIG) as [keyof typeof MODE_CONFIG, typeof MODE_CONFIG[keyof typeof MODE_CONFIG]][]).map(([key, cfg]) => (
+                  <Button
+                    key={key}
+                    onClick={() => startMode(key)}
+                    className={`${cfg.bgColor} border ${cfg.borderColor} ${cfg.color} hover:opacity-80 font-display py-5 text-left justify-start gap-3`}
+                  >
+                    {cfg.icon}
+                    <div className="text-left">
+                      <div className="text-sm font-bold">{cfg.label}</div>
+                      <div className="text-[10px] opacity-70 font-sans">{cfg.description}</div>
+                    </div>
+                  </Button>
+                ))}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={() => { setMode('gamble'); setPhase('playing'); setMood('default'); }}
+                    className="flex-1 bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30 font-display"
+                  >
+                    <Gift className="w-4 h-4 mr-2" />
+                    Cosmic Gamble
+                  </Button>
+                  <Button variant="ghost" onClick={handleClose} className="text-muted-foreground hover:text-foreground">
+                    Return
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -508,8 +546,8 @@ export const ReaganGame = () => {
           {/* Loading — Crystal Ball */}
           {phase === 'loading' && <CrystalBallLoader />}
 
-          {/* Trivia */}
-          {phase === 'playing' && mode === 'trivia' && questions.length > 0 && (
+          {/* Trivia — Scholarly Sprint & Void's Paradox */}
+          {phase === 'playing' && (mode === 'scholarly_sprint' || mode === 'voids_paradox') && questions.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
               <TimerBar />
               <div className="flex items-center justify-between mb-2">
@@ -544,13 +582,13 @@ export const ReaganGame = () => {
             </motion.div>
           )}
 
-          {/* Riddle */}
-          {phase === 'playing' && mode === 'riddle' && riddle && (
+          {/* Riddle — Mind-Bender */}
+          {phase === 'playing' && mode === 'mind_bender' && riddle && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
               <TimerBar />
               <div className="flex items-center gap-2 mb-2">
-                <HelpCircle className="w-5 h-5 text-neon-amber" />
-                <span className="text-xs text-muted-foreground font-display">RIDDLE CHALLENGE</span>
+                <Brain className="w-5 h-5 text-neon-amber" />
+                <span className="text-xs text-muted-foreground font-display">MIND-BENDER CHALLENGE</span>
               </div>
               <p className="text-foreground font-semibold text-lg italic">"{riddle.riddle}"</p>
               {!riddleRevealed ? (
@@ -595,10 +633,9 @@ export const ReaganGame = () => {
             </motion.div>
           )}
 
-          {/* Result — with spiteful/reluctant Reagan */}
+          {/* Result */}
           {phase === 'result' && (
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
-              {/* Reagan's reaction quote */}
               {reaganQuote && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
