@@ -1,8 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export async function callPrizeBoardAI(mode: 'reagan' | 'riddle' | 'blessing' | 'theme', theme?: string) {
+export type AIMode = 'scholarly_sprint' | 'voids_paradox' | 'mind_bender' | 'reagan' | 'riddle' | 'blessing' | 'mystery_box' | 'theme' | 'whammy_taunt';
+
+export async function callPrizeBoardAI(mode: AIMode, theme?: string, topic?: string) {
   const { data, error } = await supabase.functions.invoke('prize-board-ai', {
-    body: { mode, theme },
+    body: { mode, theme, topic },
   });
 
   if (error) {
@@ -13,11 +15,10 @@ export async function callPrizeBoardAI(mode: 'reagan' | 'riddle' | 'blessing' | 
   const result = data?.result;
   if (!result) return null;
 
-  // For modes that return JSON, try to parse
-  if (mode === 'blessing') return result;
+  // For modes that return plain text
+  if (mode === 'blessing' || mode === 'mystery_box' || mode === 'whammy_taunt') return result;
 
   try {
-    // Strip markdown code fences if present
     const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     return JSON.parse(cleaned);
   } catch {
