@@ -4,7 +4,7 @@ import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
 import confetti from 'canvas-confetti';
-import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap, GraduationCap, Brain, Infinity } from 'lucide-react';
+import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap, GraduationCap, Brain, Infinity as InfinityIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import reaganDefault from '@/assets/reagan-magnificent.png';
