@@ -69,7 +69,7 @@ const MODE_CONFIG = {
   },
   voids_paradox: {
     label: "Void's Paradox",
-    icon: <Infinity className="w-5 h-5" />,
+    icon: <InfinityIcon className="w-5 h-5" />,
     color: 'text-neon-purple',
     borderColor: 'border-neon-purple/50',
     bgColor: 'bg-neon-purple/20',
