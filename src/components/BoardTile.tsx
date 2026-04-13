@@ -331,12 +331,12 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
       className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-200
         ${isSelected
           ? 'bg-neon-emerald/20 border-neon-emerald/60 selection-glow'
-          : 'bg-card/40 border-white/10 hover:border-neon-emerald/30 hover:bg-card/60'
+          : 'bg-white/10 backdrop-blur-md border-white/15 hover:border-neon-emerald/40 hover:bg-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
         }
         ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
       `}
     >
-      <span className={`font-display text-sm font-bold ${isSelected ? 'text-neon-emerald' : 'text-muted-foreground/60'}`}>
+      <span className={`font-display text-sm font-bold ${isSelected ? 'text-neon-emerald' : 'text-foreground/40'}`}>
         {tile.id}
       </span>
     </motion.div>

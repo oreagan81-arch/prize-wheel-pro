@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 229 84% 5%;
+    --background: 229 60% 12%;
     --foreground: 210 40% 92%;
 
     --card: 230 50% 8%;
@@ -15,17 +15,17 @@
     --popover: 230 50% 10%;
     --popover-foreground: 210 40% 92%;
 
-    --primary: 160 84% 39%;
-    --primary-foreground: 229 84% 5%;
+    --primary: 160 95% 44%;
+    --primary-foreground: 229 60% 12%;
 
-    --secondary: 270 60% 55%;
+    --secondary: 270 75% 58%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 230 30% 15%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 45 96% 58%;
-    --accent-foreground: 229 84% 5%;
+    --accent: 45 100% 60%;
+    --accent-foreground: 229 60% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
@@ -37,9 +37,9 @@
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --neon-emerald: 160 84% 39%;
-    --neon-amber: 45 96% 58%;
-    --neon-purple: 270 60% 55%;
+    --neon-emerald: 160 95% 44%;
+    --neon-amber: 45 100% 60%;
+    --neon-purple: 270 75% 58%;
     --neon-cyan: 185 80% 55%;
     --void: 230 50% 6%;
     --glass: 230 30% 12%;
