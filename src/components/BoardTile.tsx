@@ -11,7 +11,15 @@ interface BoardTileProps {
   tile: Tile;
 }
 
-const WHAMMY_TIMER = 10; // seconds
+const WHAMMY_TIMER = 10;
+
+const REAGAN_WARNINGS = [
+  "Wait... Reagan senses something...",
+  "The crystal ball is trembling!",
+  "Reagan is eyeing your prize...",
+  "He's reaching for it!",
+  "REAGAN IS HUNGRY!",
+];
 
 export const BoardTile = ({ tile }: BoardTileProps) => {
   const { selectionMode, selectedTiles, selectedStudent, toggleTileSelection, revealTile, trapTile, prizes, useSpins, spins } = useBoardStore();
@@ -21,12 +29,12 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
   const [showBomb, setShowBomb] = useState(false);
   const [bombMessage, setBombMessage] = useState('');
 
-  // Whammy Trap state
-  const [whammyActive, setWhammyActive] = useState(false);
+  // Whammy Trap state — 3 phases: 'celebrate' → 'warning' → 'trapped'
+  const [whammyPhase, setWhammyPhase] = useState<'idle' | 'celebrate' | 'warning' | 'trapped'>('idle');
   const [whammyTimer, setWhammyTimer] = useState(WHAMMY_TIMER);
-  const [whammyResult, setWhammyResult] = useState<'pending' | 'trapped' | 'safe'>('pending');
   const [whammyPrize, setWhammyPrize] = useState<{ name: string; emoji: string } | null>(null);
   const [whammyTaunt, setWhammyTaunt] = useState('');
+  const [whammyWarningIndex, setWhammyWarningIndex] = useState(0);
 
   // Mystery Box loading
   const [mysteryLoading, setMysteryLoading] = useState(false);
@@ -38,39 +46,54 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
 
   const isSelected = selectedTiles.includes(tile.id);
 
-  // Whammy timer countdown
+  // Phase 1 → Phase 2 transition: after 3s of celebration, start warnings
   useEffect(() => {
-    if (!whammyActive || whammyResult !== 'pending') return;
+    if (whammyPhase !== 'celebrate') return;
+    const timeout = setTimeout(() => {
+      setShowReveal(false); // close the fake prize overlay
+      setWhammyPhase('warning');
+      setWhammyTimer(WHAMMY_TIMER);
+      setWhammyWarningIndex(0);
+      SFX.error();
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [whammyPhase]);
+
+  // Phase 2: warning countdown + escalating messages
+  useEffect(() => {
+    if (whammyPhase !== 'warning') return;
     const interval = setInterval(() => {
       setWhammyTimer(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          // TRAP SPRUNG!
           handleWhammyResolve();
           return 0;
         }
         if (prev <= 4) SFX.lottoTick('E5');
+        // Escalate warning messages
+        const warningIdx = Math.min(
+          Math.floor(((WHAMMY_TIMER - prev + 1) / WHAMMY_TIMER) * REAGAN_WARNINGS.length),
+          REAGAN_WARNINGS.length - 1
+        );
+        setWhammyWarningIndex(warningIdx);
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [whammyActive, whammyResult]);
+  }, [whammyPhase]);
 
   const handleWhammyResolve = useCallback(async () => {
-    // Reagan eats the prize!
     SFX.spitefulLaugh();
-    setWhammyResult('trapped');
-    
-    // Get AI taunt
+    setWhammyPhase('trapped');
+
     const taunt = await callPrizeBoardAI('whammy_taunt');
     setWhammyTaunt(typeof taunt === 'string' ? taunt : "REAGAN DEVOURS YOUR PRIZE! Mwahaha!");
-    
-    // Consolation: +2 stamps, -1 spin
+
     trapTile(tile.id, '🎟️ +2 Stamps (Consolation)');
-    
-    confetti({ 
-      particleCount: 50, spread: 60, origin: { y: 0.5 }, 
-      colors: ['#ef4444', '#dc2626', '#991b1b'] 
+
+    confetti({
+      particleCount: 50, spread: 60, origin: { y: 0.5 },
+      colors: ['#ef4444', '#dc2626', '#991b1b']
     });
   }, [tile.id, trapTile]);
 
@@ -107,7 +130,6 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
 
   const handleClick = useCallback(async () => {
     if (tile.state === 'assigned' && !selectionMode) {
-      // Check for bomb first
       if (tile.isBomb) {
         const effect = BOMB_EFFECTS[Math.floor(Math.random() * BOMB_EFFECTS.length)];
         setBombMessage(effect.msg);
@@ -123,7 +145,6 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
       const emojiMatch = prize.name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
       const emoji = emojiMatch ? emojiMatch[0] : '🎁';
 
-      // Check for Mystery Box — generate AI reward
       let finalName = prize.name;
       if (prize.name.includes('Mystery Box')) {
         setMysteryLoading(true);
@@ -134,13 +155,17 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
         setMysteryLoading(false);
       }
 
-      // Check for Whammy Trap (only on rare/legendary with isTrap flag)
+      // Whammy Trap: show prize FIRST (celebrate), then warnings
       if ((prize.tier === 'rare' || prize.tier === 'legendary') && tile.isTrap) {
+        // Phase 1: Celebrate — student thinks they won!
+        revealTile(tile.id, finalName);
         setWhammyPrize({ name: finalName, emoji });
-        setWhammyActive(true);
-        setWhammyTimer(WHAMMY_TIMER);
-        setWhammyResult('pending');
-        SFX.error();
+        setRevealedPrize({ name: finalName, emoji, rare: prize.tier === 'legendary' });
+        setShowReveal(true);
+        setWhammyPhase('celebrate');
+
+        SFX.prizeReveal();
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.4 }, colors: ['#fbbf24', '#f59e0b', '#10b981'] });
         return;
       }
 
@@ -148,7 +173,7 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
       revealTile(tile.id, finalName);
       setRevealedPrize({ name: finalName, emoji, rare: prize.tier === 'legendary' });
       setShowReveal(true);
-      
+
       SFX.prizeReveal();
       if (prize.tier === 'legendary') {
         confetti({ particleCount: 300, spread: 120, origin: { y: 0.4 }, colors: ['#fbbf24', '#f59e0b'] });
@@ -169,110 +194,169 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     }
   }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection, rollPrize, revealTile, useSpins]);
 
-  // Whammy Trap overlay
-  if (whammyActive) {
-    return (
-      <>
-        <div className="aspect-square rounded-lg bg-destructive/20 border-2 border-destructive animate-pulse flex items-center justify-center">
-          <AlertTriangle className="w-6 h-6 text-destructive" />
-        </div>
+  // --- RENDER: Overlays FIRST (always mounted), then tile ---
+  const renderOverlays = () => (
+    <>
+      {/* Prize Reveal Overlay — persists across tile state changes */}
+      {showReveal && revealedPrize && (
+        <PrizeRevealOverlay
+          open={showReveal}
+          onClose={() => { setShowReveal(false); }}
+          prizeName={revealedPrize.name}
+          prizeEmoji={revealedPrize.emoji}
+          studentName={tile.studentName || ''}
+          isRare={revealedPrize.rare}
+        />
+      )}
+
+      {/* Bomb Overlay */}
+      {showBomb && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setShowBomb(false)}
+        >
+          <motion.div
+            animate={{ rotate: [0, -5, 5, -5, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 0.5, repeat: 2 }}
+            className="glass-panel-strong p-8 rounded-2xl text-center space-y-4"
+          >
+            <div className="text-7xl">💣</div>
+            <p className="text-destructive font-display text-xl">{bombMessage}</p>
+            <p className="text-muted-foreground text-sm">Tap to dismiss</p>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Whammy Warning Phase (Phase 2) */}
+      {whammyPhase === 'warning' && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90"
         >
+          {/* Red pulse background effect */}
           <motion.div
-            animate={whammyResult === 'pending' ? { scale: [1, 1.02, 1] } : {}}
+            animate={{ opacity: [0, 0.15, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="fixed inset-0 bg-destructive pointer-events-none"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.02, 1] }}
             transition={{ repeat: Infinity, duration: 0.5 }}
-            className="glass-panel-strong p-8 rounded-2xl text-center space-y-4 max-w-md mx-4"
+            className="glass-panel-strong p-8 rounded-2xl text-center space-y-4 max-w-md mx-4 z-[71] relative"
           >
-            {whammyResult === 'pending' ? (
-              <>
-                <motion.div
-                  animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
-                  className="text-7xl"
-                >
-                  ⚠️
-                </motion.div>
-                <h3 className="font-display text-2xl text-destructive tracking-wider">WHAMMY TRAP!</h3>
-                <p className="text-foreground text-sm">
-                  <span className="text-neon-amber font-bold">{whammyPrize?.name}</span> is at risk!
-                </p>
-                <div className="relative w-full h-4 bg-card/60 rounded-full overflow-hidden border border-destructive/30">
-                  <motion.div
-                    className="h-full bg-destructive rounded-full"
-                    initial={{ width: '100%' }}
-                    animate={{ width: `${(whammyTimer / WHAMMY_TIMER) * 100}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-                <p className={`font-display text-4xl ${whammyTimer <= 3 ? 'text-destructive animate-pulse' : 'text-neon-amber'}`}>
-                  {whammyTimer}
-                </p>
-                <p className="text-xs text-muted-foreground italic">Reagan is reaching for your prize...</p>
-              </>
-            ) : (
-              <>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-7xl spiteful-dance"
-                >
-                  👹
-                </motion.div>
-                <h3 className="font-display text-2xl text-destructive tracking-wider">REAGAN DEVOURS IT!</h3>
-                <p className="text-neon-amber italic text-sm font-display">"{whammyTaunt}"</p>
-                <div className="glass-panel p-3 rounded-lg border-destructive/20">
-                  <p className="text-xs text-muted-foreground">Consolation: 🎟️ +2 Stamps</p>
-                  <p className="text-xs text-destructive">-1 Class Spin deducted</p>
-                </div>
-                <button
-                  onClick={() => { setWhammyActive(false); setWhammyResult('pending'); }}
-                  className="text-xs text-muted-foreground hover:text-foreground mt-2 font-display uppercase tracking-widest"
-                >
-                  Return to Board
-                </button>
-              </>
-            )}
+            <motion.div
+              animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity }}
+              className="text-7xl"
+            >
+              🧙
+            </motion.div>
+            <h3 className="font-display text-2xl text-destructive tracking-wider">⚠️ WHAMMY DETECTED!</h3>
+            <p className="text-foreground text-sm">
+              <span className="text-neon-amber font-bold">{whammyPrize?.emoji} {whammyPrize?.name}</span> is at risk!
+            </p>
+            <motion.p
+              key={whammyWarningIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-neon-purple italic text-sm font-display"
+            >
+              {REAGAN_WARNINGS[whammyWarningIndex]}
+            </motion.p>
+            <div className="relative w-full h-4 bg-card/60 rounded-full overflow-hidden border border-destructive/30">
+              <motion.div
+                className="h-full bg-destructive rounded-full"
+                initial={{ width: '100%' }}
+                animate={{ width: `${(whammyTimer / WHAMMY_TIMER) * 100}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+            <p className={`font-display text-4xl ${whammyTimer <= 3 ? 'text-destructive animate-pulse' : 'text-neon-amber'}`}>
+              {whammyTimer}
+            </p>
           </motion.div>
         </motion.div>
-      </>
-    );
-  }
+      )}
+
+      {/* Whammy Trapped Phase (Phase 3) */}
+      {whammyPhase === 'trapped' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90"
+        >
+          <motion.div className="glass-panel-strong p-8 rounded-2xl text-center space-y-4 max-w-md mx-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="text-7xl spiteful-dance"
+            >
+              👹
+            </motion.div>
+            <h3 className="font-display text-2xl text-destructive tracking-wider">REAGAN DEVOURS IT!</h3>
+            <p className="text-foreground/60 text-sm line-through">{whammyPrize?.emoji} {whammyPrize?.name}</p>
+            <p className="text-neon-amber italic text-sm font-display">"{whammyTaunt}"</p>
+            <div className="glass-panel p-3 rounded-lg border-destructive/20">
+              <p className="text-xs text-muted-foreground">Consolation: 🎟️ +2 Stamps</p>
+              <p className="text-xs text-destructive">-1 Class Spin deducted</p>
+            </div>
+            <button
+              onClick={() => { setWhammyPhase('idle'); }}
+              className="text-xs text-muted-foreground hover:text-foreground mt-2 font-display uppercase tracking-widest"
+            >
+              Return to Board
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </>
+  );
 
   // Mystery Box loading state
   if (mysteryLoading) {
     return (
-      <div className="aspect-square rounded-lg bg-neon-purple/20 border border-neon-purple/40 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-neon-purple animate-spin" />
-      </div>
+      <>
+        {renderOverlays()}
+        <div className="aspect-square rounded-lg bg-neon-purple/20 border border-neon-purple/40 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 text-neon-purple animate-spin" />
+        </div>
+      </>
     );
   }
 
+  // Revealed tile
   if (tile.state === 'revealed') {
     return (
-      <div className={`aspect-square rounded-lg flex items-center justify-center ${
-        tile.prize === '💣 BOMB' 
-          ? 'bg-destructive/20 border border-destructive/30' 
-          : tile.isTrapped
-          ? 'bg-destructive/10 border border-destructive/20 void-pulse'
-          : 'bg-void/80 border border-white/5 void-pulse'
-      }`}>
-        <span className={`font-display text-xs ${
-          tile.prize === '💣 BOMB' ? 'text-destructive/60' : 
-          tile.isTrapped ? 'text-destructive/40' :
-          'text-muted-foreground/40'
+      <>
+        {renderOverlays()}
+        <div className={`aspect-square rounded-lg flex items-center justify-center ${
+          tile.prize === '💣 BOMB'
+            ? 'bg-destructive/20 border border-destructive/30'
+            : tile.isTrapped
+            ? 'bg-destructive/10 border border-destructive/20 void-pulse'
+            : 'bg-void/80 border border-white/5 void-pulse'
         }`}>
-          {tile.prize === '💣 BOMB' ? '💣' : tile.isTrapped ? '👹' : tile.id}
-        </span>
-      </div>
+          <span className={`font-display text-xs ${
+            tile.prize === '💣 BOMB' ? 'text-destructive/60' :
+            tile.isTrapped ? 'text-destructive/40' :
+            'text-muted-foreground/40'
+          }`}>
+            {tile.prize === '💣 BOMB' ? '💣' : tile.isTrapped ? '👹' : tile.id}
+          </span>
+        </div>
+      </>
     );
   }
 
+  // Assigned tile
   if (tile.state === 'assigned') {
     return (
       <>
+        {renderOverlays()}
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -285,60 +369,34 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
             {tile.studentName}
           </span>
         </motion.div>
-        {showReveal && revealedPrize && (
-          <PrizeRevealOverlay
-            open={showReveal}
-            onClose={() => setShowReveal(false)}
-            prizeName={revealedPrize.name}
-            prizeEmoji={revealedPrize.emoji}
-            studentName={tile.studentName || ''}
-            isRare={revealedPrize.rare}
-          />
-        )}
-        {showBomb && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-            onClick={() => setShowBomb(false)}
-          >
-            <motion.div
-              animate={{ rotate: [0, -5, 5, -5, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.5, repeat: 2 }}
-              className="glass-panel-strong p-8 rounded-2xl text-center space-y-4"
-            >
-              <div className="text-7xl">💣</div>
-              <p className="text-destructive font-display text-xl">{bombMessage}</p>
-              <p className="text-muted-foreground text-sm">Tap to dismiss</p>
-            </motion.div>
-          </motion.div>
-        )}
       </>
     );
   }
 
   // Empty tile
   return (
-    <motion.div
-      ref={ref}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-200
-        ${isSelected
-          ? 'bg-neon-emerald/20 border-neon-emerald/60 selection-glow'
-          : 'bg-white/10 backdrop-blur-md border-white/15 hover:border-neon-emerald/40 hover:bg-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
-        }
-        ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
-      `}
-    >
-      <span className={`font-display text-sm font-bold ${isSelected ? 'text-neon-emerald' : 'text-foreground/40'}`}>
-        {tile.id}
-      </span>
-    </motion.div>
+    <>
+      {renderOverlays()}
+      <motion.div
+        ref={ref}
+        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-200
+          ${isSelected
+            ? 'bg-neon-emerald/20 border-neon-emerald/60 selection-glow'
+            : 'bg-white/10 backdrop-blur-md border-white/15 hover:border-neon-emerald/40 hover:bg-white/15 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+          }
+          ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
+        `}
+      >
+        <span className={`font-display text-sm font-bold ${isSelected ? 'text-neon-emerald' : 'text-foreground/40'}`}>
+          {tile.id}
+        </span>
+      </motion.div>
+    </>
   );
 };
