@@ -21,14 +21,17 @@ export const LottoWheel = () => {
 
   const assignedTiles = tiles.filter((t) => t.state === 'assigned');
 
+  // Include ALL tiles (assigned + empty) so spinner can land on unassigned numbers
+  const allTiles = tiles.filter((t) => t.state === 'assigned' || t.state === 'empty');
+
   const buildStrip = useCallback(() => {
-    if (assignedTiles.length === 0) return [];
+    if (allTiles.length === 0) return [];
     const items: number[] = [];
     for (let i = 0; i < 60; i++) {
-      items.push(assignedTiles[Math.floor(Math.random() * assignedTiles.length)].id);
+      items.push(allTiles[Math.floor(Math.random() * allTiles.length)].id);
     }
     return items;
-  }, [assignedTiles]);
+  }, [allTiles]);
 
   const rollPrize = useCallback(() => {
     const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
