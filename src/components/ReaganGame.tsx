@@ -483,6 +483,8 @@ export const ReaganGame = () => {
     setReaganQuote('');
     setLightningActive(false);
     setScreenShake(false);
+    setUsingCurriculum(false);
+    setCurriculumQuestions([]);
   };
 
   if (!aiGameOpen) return null;
