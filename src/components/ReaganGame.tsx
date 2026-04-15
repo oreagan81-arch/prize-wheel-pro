@@ -369,11 +369,23 @@ export const ReaganGame = () => {
     }
   }, [curriculumTopic, startTimer, usedQuestionIds]);
 
-  const handleTriviaAnswer = useCallback(async () => {
+  const handleTriviaAnswer = useCallback(async (selectedAnswer?: string) => {
     stopTimer();
     await SFX.click();
 
-    if (qIdx < questions.length - 1) {
+    if (usingCurriculum && selectedAnswer) {
+      // Server-side validation for curriculum questions
+      const currentQ = curriculumQuestions[qIdx];
+      const result = await validateAnswer(currentQ.id, selectedAnswer);
+      if (result && !result.correct) {
+        // Wrong answer — lightning + penalty
+        await triggerLightning();
+        await SFX.error();
+      }
+    }
+
+    const totalQs = usingCurriculum ? curriculumQuestions.length : questions.length;
+    if (qIdx < totalQs - 1) {
       setQIdx(qIdx + 1);
       startTimer();
     } else {
@@ -390,7 +402,7 @@ export const ReaganGame = () => {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 }, colors: ['#8b5cf6', '#fbbf24', '#10b981'] });
       }
     }
-  }, [qIdx, questions, addSpins, startTimer, stopTimer]);
+  }, [qIdx, questions, curriculumQuestions, usingCurriculum, addSpins, startTimer, stopTimer, triggerLightning]);
 
   const handleRiddleCorrect = useCallback(async () => {
     stopTimer();
