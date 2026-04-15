@@ -287,8 +287,50 @@ export const ReaganGame = () => {
     setPhase('loading');
     setDistractionVisible(false);
 
-    if (chosenMode === 'scholarly_sprint' || chosenMode === 'voids_paradox') {
-      const data = await callPrizeBoardAI(chosenMode, undefined, curriculumTopic || undefined);
+    if (chosenMode === 'scholarly_sprint') {
+      // Try curriculum questions first (3 questions per round)
+      const cQuestions: CurriculumQuestion[] = [];
+      for (let i = 0; i < 3; i++) {
+        const q = await getCurriculumQuestion(undefined, undefined, [...usedQuestionIds, ...cQuestions.map(cq => cq.id)]);
+        if (q) cQuestions.push(q);
+        else break;
+      }
+
+      if (cQuestions.length >= 3) {
+        // Use curriculum questions
+        setCurriculumQuestions(cQuestions);
+        setUsedQuestionIds(prev => [...prev, ...cQuestions.map(q => q.id)]);
+        setUsingCurriculum(true);
+        setQIdx(0);
+        setPhase('playing');
+        setMood('default');
+        startTimer();
+      } else {
+        // Fallback to AI
+        setUsingCurriculum(false);
+        const data = await callPrizeBoardAI('scholarly_sprint', undefined, curriculumTopic || undefined);
+        if (data?.questions) {
+          setQuestions(data.questions);
+          setQIdx(0);
+          setPhase('playing');
+          setMood('default');
+          startTimer();
+        } else {
+          const fallback = [
+            { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
+            { q: "In Shurley English, what part of speech modifies a verb?", a: ["Adverb", "Adjective", "Pronoun"] },
+            { q: "How many sides does a hexagon have?", a: ["6", "8", "5"] },
+          ];
+          setQuestions(fallback);
+          setQIdx(0);
+          setPhase('playing');
+          setMood('default');
+          startTimer();
+        }
+      }
+    } else if (chosenMode === 'voids_paradox') {
+      setUsingCurriculum(false);
+      const data = await callPrizeBoardAI('voids_paradox', undefined, curriculumTopic || undefined);
       if (data?.questions) {
         setQuestions(data.questions);
         setQIdx(0);
@@ -296,15 +338,10 @@ export const ReaganGame = () => {
         setMood('default');
         startTimer();
       } else {
-        // Fallback questions
-        const fallback = chosenMode === 'voids_paradox' ? [
+        const fallback = [
           { q: "If a shadow weighs 3 ounces, how many shadows can fit in a gallon?", a: ["42 shadow-gallons", "None, shadows are metric", "Only on Tuesdays"] },
           { q: "What is the square root of a whisper?", a: ["Silent geometry", "0.003 decibels", "A smaller whisper"] },
           { q: "If history runs backwards, who discovered America last?", a: ["The fish", "Christopher Reverse", "No one yet"] },
-        ] : [
-          { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
-          { q: "In Shurley English, what part of speech modifies a verb?", a: ["Adverb", "Adjective", "Pronoun"] },
-          { q: "How many sides does a hexagon have?", a: ["6", "8", "5"] },
         ];
         setQuestions(fallback);
         setQIdx(0);
@@ -314,6 +351,7 @@ export const ReaganGame = () => {
       }
     } else {
       // Mind-Bender
+      setUsingCurriculum(false);
       const data = await callPrizeBoardAI('mind_bender');
       if (data?.riddle) {
         setRiddle(data);
@@ -329,7 +367,7 @@ export const ReaganGame = () => {
         startTimer();
       }
     }
-  }, [curriculumTopic, startTimer]);
+  }, [curriculumTopic, startTimer, usedQuestionIds]);
 
   const handleTriviaAnswer = useCallback(async () => {
     stopTimer();
