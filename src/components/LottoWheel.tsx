@@ -46,13 +46,14 @@ export const LottoWheel = () => {
   }, [prizes]);
 
   const handleSpin = useCallback(async () => {
-    if (spinning || assignedTiles.length === 0 || spins < 1) return;
+    if (spinning || allTiles.length === 0 || spins < 1) return;
 
     useSpins(1);
     setSpinning(true);
     setLanded(false);
     setLandedTile(null);
     setPrizeOverlay(null);
+    setEmptyLanded(false);
 
     const items = buildStrip();
     stripItems.current = items;
@@ -83,10 +84,15 @@ export const LottoWheel = () => {
         setLandedTile({ id: winTile.id, studentName: winTile.studentName || '' });
         setLanded(true);
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 }, colors: ['#10b981', '#f59e0b', '#8b5cf6'] });
+      } else {
+        // Empty number penalty — spin already deducted, show message
+        setEmptyLanded(true);
+        setLanded(true);
+        SFX.error();
       }
       setSpinning(false);
     }, 5000);
-  }, [spinning, assignedTiles, spins, useSpins, buildStrip, tiles]);
+  }, [spinning, allTiles, spins, useSpins, buildStrip, tiles]);
 
   const handleShowPrize = useCallback(async () => {
     if (!landedTile) return;
