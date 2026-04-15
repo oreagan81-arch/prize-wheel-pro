@@ -26,3 +26,49 @@ export async function callPrizeBoardAI(mode: AIMode, theme?: string, topic?: str
     return null;
   }
 }
+
+// --- Curriculum Question API (server-side validated) ---
+
+export interface CurriculumQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  subject: string;
+  difficulty: string;
+  category: string | null;
+}
+
+export async function getCurriculumQuestion(
+  subject?: string,
+  grade?: number,
+  excludeIds?: string[]
+): Promise<CurriculumQuestion | null> {
+  const { data, error } = await supabase.functions.invoke('get-question', {
+    body: { subject, grade, excludeIds },
+  });
+
+  if (error) {
+    console.error('get-question error:', error);
+    return null;
+  }
+
+  if (data?.exhausted) return null; // No more questions
+
+  return data as CurriculumQuestion;
+}
+
+export async function validateAnswer(
+  questionId: string,
+  answer: string
+): Promise<{ correct: boolean; correctAnswer: string } | null> {
+  const { data, error } = await supabase.functions.invoke('validate-answer', {
+    body: { questionId, answer },
+  });
+
+  if (error) {
+    console.error('validate-answer error:', error);
+    return null;
+  }
+
+  return data as { correct: boolean; correctAnswer: string };
+}

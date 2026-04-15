@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
-import { callPrizeBoardAI } from '@/lib/ai';
+import { callPrizeBoardAI, getCurriculumQuestion, validateAnswer, type CurriculumQuestion } from '@/lib/ai';
 import confetti from 'canvas-confetti';
 import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap, GraduationCap, Brain, Infinity as InfinityIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -211,6 +211,9 @@ export const ReaganGame = () => {
 
   // Trivia (Scholarly Sprint & Void's Paradox)
   const [questions, setQuestions] = useState<AIQuestion[]>([]);
+  const [curriculumQuestions, setCurriculumQuestions] = useState<CurriculumQuestion[]>([]);
+  const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
+  const [usingCurriculum, setUsingCurriculum] = useState(false);
   const [qIdx, setQIdx] = useState(0);
 
   // Riddle (Mind-Bender)
@@ -284,8 +287,50 @@ export const ReaganGame = () => {
     setPhase('loading');
     setDistractionVisible(false);
 
-    if (chosenMode === 'scholarly_sprint' || chosenMode === 'voids_paradox') {
-      const data = await callPrizeBoardAI(chosenMode, undefined, curriculumTopic || undefined);
+    if (chosenMode === 'scholarly_sprint') {
+      // Try curriculum questions first (3 questions per round)
+      const cQuestions: CurriculumQuestion[] = [];
+      for (let i = 0; i < 3; i++) {
+        const q = await getCurriculumQuestion(undefined, undefined, [...usedQuestionIds, ...cQuestions.map(cq => cq.id)]);
+        if (q) cQuestions.push(q);
+        else break;
+      }
+
+      if (cQuestions.length >= 3) {
+        // Use curriculum questions
+        setCurriculumQuestions(cQuestions);
+        setUsedQuestionIds(prev => [...prev, ...cQuestions.map(q => q.id)]);
+        setUsingCurriculum(true);
+        setQIdx(0);
+        setPhase('playing');
+        setMood('default');
+        startTimer();
+      } else {
+        // Fallback to AI
+        setUsingCurriculum(false);
+        const data = await callPrizeBoardAI('scholarly_sprint', undefined, curriculumTopic || undefined);
+        if (data?.questions) {
+          setQuestions(data.questions);
+          setQIdx(0);
+          setPhase('playing');
+          setMood('default');
+          startTimer();
+        } else {
+          const fallback = [
+            { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
+            { q: "In Shurley English, what part of speech modifies a verb?", a: ["Adverb", "Adjective", "Pronoun"] },
+            { q: "How many sides does a hexagon have?", a: ["6", "8", "5"] },
+          ];
+          setQuestions(fallback);
+          setQIdx(0);
+          setPhase('playing');
+          setMood('default');
+          startTimer();
+        }
+      }
+    } else if (chosenMode === 'voids_paradox') {
+      setUsingCurriculum(false);
+      const data = await callPrizeBoardAI('voids_paradox', undefined, curriculumTopic || undefined);
       if (data?.questions) {
         setQuestions(data.questions);
         setQIdx(0);
@@ -293,15 +338,10 @@ export const ReaganGame = () => {
         setMood('default');
         startTimer();
       } else {
-        // Fallback questions
-        const fallback = chosenMode === 'voids_paradox' ? [
+        const fallback = [
           { q: "If a shadow weighs 3 ounces, how many shadows can fit in a gallon?", a: ["42 shadow-gallons", "None, shadows are metric", "Only on Tuesdays"] },
           { q: "What is the square root of a whisper?", a: ["Silent geometry", "0.003 decibels", "A smaller whisper"] },
           { q: "If history runs backwards, who discovered America last?", a: ["The fish", "Christopher Reverse", "No one yet"] },
-        ] : [
-          { q: "What is the scientific name for the process of a caterpillar becoming a butterfly?", a: ["Metamorphosis", "Photosynthesis", "Mitosis"] },
-          { q: "In Shurley English, what part of speech modifies a verb?", a: ["Adverb", "Adjective", "Pronoun"] },
-          { q: "How many sides does a hexagon have?", a: ["6", "8", "5"] },
         ];
         setQuestions(fallback);
         setQIdx(0);
@@ -311,6 +351,7 @@ export const ReaganGame = () => {
       }
     } else {
       // Mind-Bender
+      setUsingCurriculum(false);
       const data = await callPrizeBoardAI('mind_bender');
       if (data?.riddle) {
         setRiddle(data);
@@ -326,13 +367,25 @@ export const ReaganGame = () => {
         startTimer();
       }
     }
-  }, [curriculumTopic, startTimer]);
+  }, [curriculumTopic, startTimer, usedQuestionIds]);
 
-  const handleTriviaAnswer = useCallback(async () => {
+  const handleTriviaAnswer = useCallback(async (selectedAnswer?: string) => {
     stopTimer();
     await SFX.click();
 
-    if (qIdx < questions.length - 1) {
+    if (usingCurriculum && selectedAnswer) {
+      // Server-side validation for curriculum questions
+      const currentQ = curriculumQuestions[qIdx];
+      const result = await validateAnswer(currentQ.id, selectedAnswer);
+      if (result && !result.correct) {
+        // Wrong answer — lightning + penalty
+        await triggerLightning();
+        await SFX.error();
+      }
+    }
+
+    const totalQs = usingCurriculum ? curriculumQuestions.length : questions.length;
+    if (qIdx < totalQs - 1) {
       setQIdx(qIdx + 1);
       startTimer();
     } else {
@@ -349,7 +402,7 @@ export const ReaganGame = () => {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 }, colors: ['#8b5cf6', '#fbbf24', '#10b981'] });
       }
     }
-  }, [qIdx, questions, addSpins, startTimer, stopTimer]);
+  }, [qIdx, questions, curriculumQuestions, usingCurriculum, addSpins, startTimer, stopTimer, triggerLightning]);
 
   const handleRiddleCorrect = useCallback(async () => {
     stopTimer();
@@ -430,6 +483,8 @@ export const ReaganGame = () => {
     setReaganQuote('');
     setLightningActive(false);
     setScreenShake(false);
+    setUsingCurriculum(false);
+    setCurriculumQuestions([]);
   };
 
   if (!aiGameOpen) return null;
@@ -546,8 +601,44 @@ export const ReaganGame = () => {
           {/* Loading — Crystal Ball */}
           {phase === 'loading' && <CrystalBallLoader />}
 
-          {/* Trivia — Scholarly Sprint & Void's Paradox */}
-          {phase === 'playing' && (mode === 'scholarly_sprint' || mode === 'voids_paradox') && questions.length > 0 && (
+          {/* Trivia — Scholarly Sprint (curriculum or AI) */}
+          {phase === 'playing' && mode === 'scholarly_sprint' && usingCurriculum && curriculumQuestions.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
+              <TimerBar />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground font-display">TRIAL {qIdx + 1}/{curriculumQuestions.length}</span>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: curriculumQuestions.length }).map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= qIdx ? 'bg-neon-purple' : 'bg-white/20'}`} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-foreground font-semibold text-lg">{curriculumQuestions[qIdx].question}</p>
+              <div className="grid grid-cols-1 gap-2">
+                {curriculumQuestions[qIdx].options.map((opt, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    onClick={() => handleTriviaAnswer(opt)}
+                    disabled={timerExpired}
+                    className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3 disabled:opacity-40"
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+              {timerExpired && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Button onClick={() => handleTriviaAnswer()} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
+                    <Zap className="w-4 h-4 mr-1" /> Continue (Penalty!)
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Trivia — AI-based (Scholarly Sprint fallback & Void's Paradox) */}
+          {phase === 'playing' && (mode === 'voids_paradox' || (mode === 'scholarly_sprint' && !usingCurriculum)) && questions.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
               <TimerBar />
               <div className="flex items-center justify-between mb-2">
@@ -564,7 +655,7 @@ export const ReaganGame = () => {
                   <Button
                     key={i}
                     variant="ghost"
-                    onClick={handleTriviaAnswer}
+                    onClick={() => handleTriviaAnswer(opt)}
                     disabled={timerExpired}
                     className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3 disabled:opacity-40"
                   >
@@ -574,7 +665,7 @@ export const ReaganGame = () => {
               </div>
               {timerExpired && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Button onClick={handleTriviaAnswer} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
+                  <Button onClick={() => handleTriviaAnswer()} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
                     <Zap className="w-4 h-4 mr-1" /> Continue (Penalty!)
                   </Button>
                 </motion.div>
