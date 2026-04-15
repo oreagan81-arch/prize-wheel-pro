@@ -168,7 +168,17 @@ export const LottoWheel = () => {
 
             {/* Result */}
             <AnimatePresence mode="wait">
-              {landed && landedTile && !prizeOverlay && (
+              {landed && emptyLanded && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-center space-y-3">
+                  <p className="text-xs text-destructive uppercase tracking-widest font-display">Empty Number!</p>
+                  <p className="font-display text-xl text-destructive/80">No one was assigned this number.</p>
+                  <p className="text-muted-foreground text-sm">-1 spin lost. Better luck next time!</p>
+                  <Button onClick={() => { setLanded(false); setEmptyLanded(false); }} className="bg-primary/20 border border-primary/50 text-primary hover:bg-primary/30 font-display mt-2">
+                    Spin Again ({spins})
+                  </Button>
+                </motion.div>
+              )}
+              {landed && landedTile && !prizeOverlay && !emptyLanded && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-center space-y-3">
                   <p className="text-xs text-muted-foreground uppercase tracking-widest font-display">Lucky Hit!</p>
                   <p className="font-display text-2xl text-neon-amber font-bold">{landedTile.studentName}</p>
@@ -184,13 +194,13 @@ export const LottoWheel = () => {
               <div className="mt-6 text-center">
                 <Button
                   onClick={handleSpin}
-                  disabled={spinning || spins < 1 || assignedTiles.length === 0}
+                  disabled={spinning || spins < 1 || allTiles.length === 0}
                   className="bg-primary/20 border border-primary/50 text-primary hover:bg-primary/30 font-display text-lg px-8 py-3 disabled:opacity-30"
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {spinning ? 'Drawing...' : `Spin (${spins})`}
                 </Button>
-                {assignedTiles.length === 0 && <p className="text-xs text-muted-foreground mt-2">No assigned tiles yet</p>}
+                {allTiles.length === 0 && <p className="text-xs text-muted-foreground mt-2">No tiles on the board</p>}
               </div>
             )}
 
