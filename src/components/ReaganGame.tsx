@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBoardStore } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
-import { callPrizeBoardAI } from '@/lib/ai';
+import { callPrizeBoardAI, getCurriculumQuestion, validateAnswer, type CurriculumQuestion } from '@/lib/ai';
 import confetti from 'canvas-confetti';
 import { X, Sparkles, Dice1, Gift, HelpCircle, Loader2, Timer, Zap, GraduationCap, Brain, Infinity as InfinityIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
