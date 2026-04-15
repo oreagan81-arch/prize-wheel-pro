@@ -211,6 +211,9 @@ export const ReaganGame = () => {
 
   // Trivia (Scholarly Sprint & Void's Paradox)
   const [questions, setQuestions] = useState<AIQuestion[]>([]);
+  const [curriculumQuestions, setCurriculumQuestions] = useState<CurriculumQuestion[]>([]);
+  const [usedQuestionIds, setUsedQuestionIds] = useState<string[]>([]);
+  const [usingCurriculum, setUsingCurriculum] = useState(false);
   const [qIdx, setQIdx] = useState(0);
 
   // Riddle (Mind-Bender)
