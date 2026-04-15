@@ -599,8 +599,44 @@ export const ReaganGame = () => {
           {/* Loading — Crystal Ball */}
           {phase === 'loading' && <CrystalBallLoader />}
 
-          {/* Trivia — Scholarly Sprint & Void's Paradox */}
-          {phase === 'playing' && (mode === 'scholarly_sprint' || mode === 'voids_paradox') && questions.length > 0 && (
+          {/* Trivia — Scholarly Sprint (curriculum or AI) */}
+          {phase === 'playing' && mode === 'scholarly_sprint' && usingCurriculum && curriculumQuestions.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
+              <TimerBar />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground font-display">TRIAL {qIdx + 1}/{curriculumQuestions.length}</span>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: curriculumQuestions.length }).map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= qIdx ? 'bg-neon-purple' : 'bg-white/20'}`} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-foreground font-semibold text-lg">{curriculumQuestions[qIdx].question}</p>
+              <div className="grid grid-cols-1 gap-2">
+                {curriculumQuestions[qIdx].options.map((opt, i) => (
+                  <Button
+                    key={i}
+                    variant="ghost"
+                    onClick={() => handleTriviaAnswer(opt)}
+                    disabled={timerExpired}
+                    className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3 disabled:opacity-40"
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+              {timerExpired && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Button onClick={() => handleTriviaAnswer()} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
+                    <Zap className="w-4 h-4 mr-1" /> Continue (Penalty!)
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Trivia — AI-based (Scholarly Sprint fallback & Void's Paradox) */}
+          {phase === 'playing' && (mode === 'voids_paradox' || (mode === 'scholarly_sprint' && !usingCurriculum)) && questions.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel-strong p-6 rounded-2xl space-y-4">
               <TimerBar />
               <div className="flex items-center justify-between mb-2">
@@ -617,7 +653,7 @@ export const ReaganGame = () => {
                   <Button
                     key={i}
                     variant="ghost"
-                    onClick={handleTriviaAnswer}
+                    onClick={() => handleTriviaAnswer(opt)}
                     disabled={timerExpired}
                     className="glass-panel border-white/10 text-foreground hover:border-neon-purple/50 hover:bg-neon-purple/10 text-left justify-start py-3 disabled:opacity-40"
                   >
@@ -627,7 +663,7 @@ export const ReaganGame = () => {
               </div>
               {timerExpired && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Button onClick={handleTriviaAnswer} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
+                  <Button onClick={() => handleTriviaAnswer()} className="w-full bg-destructive/20 border border-destructive/50 text-destructive hover:bg-destructive/30 mt-2">
                     <Zap className="w-4 h-4 mr-1" /> Continue (Penalty!)
                   </Button>
                 </motion.div>
