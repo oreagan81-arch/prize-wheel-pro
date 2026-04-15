@@ -20,6 +20,7 @@ export const LottoWheel = () => {
   const stripItems = useRef<number[]>([]);
 
   const assignedTiles = tiles.filter((t) => t.state === 'assigned');
+  const [emptyLanded, setEmptyLanded] = useState(false);
 
   // Include ALL tiles (assigned + empty) so spinner can land on unassigned numbers
   const allTiles = tiles.filter((t) => t.state === 'assigned' || t.state === 'empty');
