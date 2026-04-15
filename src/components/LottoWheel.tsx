@@ -123,6 +123,7 @@ export const LottoWheel = () => {
     setLandedTile(null);
     setStripOffset(0);
     setPrizeOverlay(null);
+    setEmptyLanded(false);
   };
 
   if (!lottoOpen) return null;
