@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type TileState = 'empty' | 'assigned' | 'revealed' | 'bomb';
 
@@ -145,7 +146,9 @@ const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Par
   };
 };
 
-export const useBoardStore = create<BoardState>((set, get) => {
+export const useBoardStore = create<BoardState>()(
+  persist(
+    (set, get) => {
   const initialClass: ClassName = 'homeroom';
   const initialClasses: Record<ClassName, ClassData> = {
     homeroom: createClassData('homeroom'),
