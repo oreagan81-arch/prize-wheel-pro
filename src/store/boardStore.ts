@@ -8,7 +8,6 @@ export interface Tile {
   studentName?: string;
   prize?: string;
   isBomb?: boolean;
-  isTrap?: boolean;       // Whammy Trap flag
   isTrapped?: boolean;    // Was this tile actually trapped on reveal?
 }
 
@@ -65,33 +64,56 @@ interface BoardState {
   setCurriculumTopic: (topic: string) => void;
 }
 
-const defaultPrizes: Prize[] = [
-  { name: '🏆 Large 3D Print', weight: 1, tier: 'legendary' },
-  { name: '📦 Treasure Box', weight: 2, tier: 'legendary' },
-  { name: '✨ Mystery Box ✨', weight: 2, tier: 'legendary' },
-  { name: '🍕 Lunch with Friend', weight: 4, tier: 'rare' },
-  { name: '🪑 Prime Seat Pass', weight: 3, tier: 'rare' },
-  { name: '🎧 Music Pass', weight: 5, tier: 'rare' },
-  { name: '👟 Shoes Off Day', weight: 3, tier: 'rare' },
-  { name: '⭐ +10 Stamps', weight: 15, tier: 'common' },
-  { name: '🎟️ +5 Stamps', weight: 25, tier: 'common' },
+// 100-square weighted prize tables per class
+const sharedPrizes: Prize[] = [
+  { name: '🏆 Large 3D Print', weight: 2, tier: 'rare' },
+  { name: '📦 Treasure Box', weight: 3, tier: 'rare' },
+  { name: '🍕 Lunch with Friend', weight: 5, tier: 'common' },
+  { name: '🪑 Prime Seat Pass', weight: 5, tier: 'common' },
+  { name: '🖨️ Small 3D Print', weight: 5, tier: 'common' },
+  { name: '🥢 Stick Box x 2', weight: 10, tier: 'common' },
+  { name: '🧸 Stuffed Animal Pass', weight: 10, tier: 'common' },
+  { name: '🪀 Toy at Recess', weight: 10, tier: 'common' },
+  { name: '🎟️ +10 Stamps', weight: 15, tier: 'common' },
+  { name: '🎫 +5 Stamps', weight: 25, tier: 'common' },
 ];
 
+const classPrizeMap: Record<ClassName, Prize[]> = {
+  homeroom: [
+    ...sharedPrizes.slice(0, 5),
+    { name: '🌅 Skip Morning Work', weight: 10, tier: 'common' },
+    ...sharedPrizes.slice(5),
+  ],
+  math: [
+    ...sharedPrizes.slice(0, 5),
+    { name: '➗ Halfies Pass', weight: 10, tier: 'common' },
+    ...sharedPrizes.slice(5),
+  ],
+  reading: [
+    ...sharedPrizes.slice(0, 5),
+    { name: '📖 No Comp Pass', weight: 10, tier: 'common' },
+    ...sharedPrizes.slice(5),
+  ],
+};
+
+// Rare prize names for Reagan Trap detection
+export const RARE_PRIZE_NAMES = ['🏆 Large 3D Print', '📦 Treasure Box'];
+export const REAGAN_TRAP_CHANCE = 0.15; // 15% on rare prizes
+export const CONSOLATION_PRIZE = '🎟️ +2 Stamps (Consolation)';
+
 const BOMB_CHANCE = 0.05;
-const TRAP_CHANCE = 0.15; // 15% trap chance on rare/legendary prizes
 
 const createEmptyTiles = (): Tile[] =>
   Array.from({ length: 100 }, (_, i) => ({
     id: i + 1,
     state: 'empty' as TileState,
     isBomb: Math.random() < BOMB_CHANCE,
-    isTrap: Math.random() < TRAP_CHANCE, // Will only apply to rare prizes
   }));
 
-const createClassData = (): ClassData => ({
+const createClassData = (cls: ClassName): ClassData => ({
   tiles: createEmptyTiles(),
   roster: [],
-  prizes: [...defaultPrizes],
+  prizes: [...classPrizeMap[cls]],
   spins: 0,
   curriculumTopic: '',
 });
@@ -125,9 +147,9 @@ const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Par
 export const useBoardStore = create<BoardState>((set, get) => {
   const initialClass: ClassName = 'homeroom';
   const initialClasses: Record<ClassName, ClassData> = {
-    homeroom: createClassData(),
-    math: createClassData(),
-    reading: createClassData(),
+    homeroom: createClassData('homeroom'),
+    math: createClassData('math'),
+    reading: createClassData('reading'),
   };
 
   return {
