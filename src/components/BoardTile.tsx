@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { useBoardStore, type Tile } from '@/store/boardStore';
+import { useBoardStore, type Tile, RARE_PRIZE_NAMES, REAGAN_TRAP_CHANCE, CONSOLATION_PRIZE } from '@/store/boardStore';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
@@ -89,7 +89,7 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     const taunt = await callPrizeBoardAI('whammy_taunt');
     setWhammyTaunt(typeof taunt === 'string' ? taunt : "REAGAN DEVOURS YOUR PRIZE! Mwahaha!");
 
-    trapTile(tile.id, '🎟️ +2 Stamps (Consolation)');
+    trapTile(tile.id, CONSOLATION_PRIZE);
 
     confetti({
       particleCount: 50, spread: 60, origin: { y: 0.5 },
@@ -155,12 +155,15 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
         setMysteryLoading(false);
       }
 
-      // Whammy Trap: show prize FIRST (celebrate), then warnings
-      if ((prize.tier === 'rare' || prize.tier === 'legendary') && tile.isTrap) {
+      // Reagan Trap: 15% chance on rare prizes (Large 3D Print, Treasure Box)
+      const isRarePrize = RARE_PRIZE_NAMES.includes(prize.name);
+      const reaganTriggered = isRarePrize && Math.random() < REAGAN_TRAP_CHANCE;
+
+      if (reaganTriggered) {
         // Phase 1: Celebrate — student thinks they won!
         revealTile(tile.id, finalName);
         setWhammyPrize({ name: finalName, emoji });
-        setRevealedPrize({ name: finalName, emoji, rare: prize.tier === 'legendary' });
+        setRevealedPrize({ name: finalName, emoji, rare: true });
         setShowReveal(true);
         setWhammyPhase('celebrate');
 
