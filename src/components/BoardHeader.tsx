@@ -1,7 +1,7 @@
 import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw } from 'lucide-react';
+import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3 } from 'lucide-react';
 import { InventoryPanel } from './InventoryPanel';
 import {
   Select,
@@ -33,6 +33,7 @@ export const BoardHeader = () => {
     selectedTiles,
     selectStudent,
     confirmAssignment,
+    luckyStrike,
     setConfigOpen,
     setLottoOpen,
     setAiGameOpen,
@@ -112,6 +113,24 @@ export const BoardHeader = () => {
                 <X className="w-4 h-4" />
               </Button>
             </div>
+          )}
+
+          {/* Lucky Strike */}
+          {selectedStudent && (
+            <Button
+              size="sm"
+              onClick={() => {
+                const tileId = luckyStrike();
+                if (tileId) {
+                  SFX.prizeReveal();
+                  import('canvas-confetti').then(m => m.default({ particleCount: 60, spread: 50, origin: { y: 0.3 }, colors: ['#10b981', '#8b5cf6', '#f59e0b'] }));
+                }
+              }}
+              className="bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30"
+            >
+              <Dice3 className="w-4 h-4 mr-1" />
+              Lucky Strike
+            </Button>
           )}
         </div>
       )}

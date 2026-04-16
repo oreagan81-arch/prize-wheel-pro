@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type TileState = 'empty' | 'assigned' | 'revealed' | 'bomb';
 
@@ -53,6 +54,7 @@ interface BoardState {
   toggleTileSelection: (id: number) => void;
   confirmAssignment: () => void;
   revealTile: (id: number, prize: string) => void;
+  luckyStrike: () => number | null; // returns tile id or null
   trapTile: (id: number, consolation: string) => void;
   addSpins: (count: number) => void;
   useSpins: (count: number) => void;
@@ -144,7 +146,9 @@ const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Par
   };
 };
 
-export const useBoardStore = create<BoardState>((set, get) => {
+export const useBoardStore = create<BoardState>()(
+  persist(
+    (set, get) => {
   const initialClass: ClassName = 'homeroom';
   const initialClasses: Record<ClassName, ClassData> = {
     homeroom: createClassData('homeroom'),
@@ -237,6 +241,26 @@ export const useBoardStore = create<BoardState>((set, get) => {
         };
       }),
 
+    luckyStrike: () => {
+      const s = get();
+      if (!s.selectedStudent) return null;
+      const emptyTiles = s.tiles.filter((t) => t.state === 'empty');
+      if (emptyTiles.length === 0) return null;
+      const target = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+      const newTiles = s.tiles.map((t) =>
+        t.id === target.id
+          ? { ...t, state: 'assigned' as TileState, studentName: s.selectedStudent! }
+          : t
+      );
+      const cls = s.currentClass;
+      const newClassData = { ...s.classes[cls], tiles: newTiles };
+      set({
+        classes: { ...s.classes, [cls]: newClassData },
+        tiles: newTiles,
+      });
+      return target.id;
+    },
+
     trapTile: (id, consolation) =>
       set((s) => {
         const newTiles = s.tiles.map((t) =>
@@ -287,4 +311,13 @@ export const useBoardStore = create<BoardState>((set, get) => {
     setCurriculumTopic: (topic) =>
       set((s) => updateCurrentClass(s, () => ({ curriculumTopic: topic }))),
   };
-});
+    },
+    {
+      name: 'prize-board-storage',
+      partialize: (state) => ({
+        currentClass: state.currentClass,
+        classes: state.classes,
+      }),
+    }
+  )
+);

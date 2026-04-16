@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 229 60% 12%;
+    --background: 230 84% 2%;
     --foreground: 210 40% 92%;
 
     --card: 230 50% 8%;
@@ -210,4 +210,14 @@
 
 .screen-shake {
   animation: screenShake 0.5s ease-out;
+}
+
+@keyframes luckyShimmer {
+  0% { box-shadow: 0 0 0 0 hsl(45 100% 60% / 0.6); }
+  50% { box-shadow: 0 0 30px 10px hsl(45 100% 60% / 0.4); }
+  100% { box-shadow: 0 0 0 0 hsl(45 100% 60% / 0); }
+}
+
+.lucky-shimmer {
+  animation: luckyShimmer 1s ease-out;
 }
