@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      curriculum_facts: {
+        Row: {
+          created_at: string
+          fact: string
+          id: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          fact: string
+          id?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          fact?: string
+          id?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           category: string | null
