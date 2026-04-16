@@ -318,16 +318,6 @@ export const useBoardStore = create<BoardState>()(
         currentClass: state.currentClass,
         classes: state.classes,
       }),
-      onRehydrate: () => (state) => {
-        if (state) {
-          const data = state.classes[state.currentClass];
-          state.tiles = data.tiles;
-          state.roster = data.roster;
-          state.prizes = data.prizes;
-          state.spins = data.spins;
-          state.curriculumTopic = data.curriculumTopic;
-        }
-      },
     }
   )
 );
