@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, RARE_PRIZE_NAMES, REAGAN_TRAP_CHANCE, CONSOLATION_PRIZE } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import confetti from 'canvas-confetti';
 import { X, Dices } from 'lucide-react';
@@ -11,7 +11,7 @@ const ITEM_HEIGHT = 100;
 const VISIBLE_ITEMS = 3;
 
 export const LottoWheel = () => {
-  const { lottoOpen, setLottoOpen, tiles, spins, useSpins, revealTile, prizes } = useBoardStore();
+  const { lottoOpen, setLottoOpen, tiles, spins, useSpins, revealTile, trapTile, prizes } = useBoardStore();
   const [spinning, setSpinning] = useState(false);
   const [landed, setLanded] = useState(false);
   const [landedTile, setLandedTile] = useState<{ id: number; studentName: string } | null>(null);
@@ -97,9 +97,33 @@ export const LottoWheel = () => {
   const handleShowPrize = useCallback(async () => {
     if (!landedTile) return;
     const prize = rollPrize();
+
+    // Reagan Trap: 15% chance on rare prizes
+    const isRarePrize = RARE_PRIZE_NAMES.includes(prize.name);
+    const reaganTriggered = isRarePrize && Math.random() < REAGAN_TRAP_CHANCE;
+
+    if (reaganTriggered) {
+      // Show the real prize briefly, then swap to consolation
+      const emojiMatch = prize.name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
+      const emoji = emojiMatch ? emojiMatch[0] : '🎁';
+
+      // First show the real prize with fanfare
+      setPrizeOverlay({ name: prize.name, emoji, student: landedTile.studentName, rare: true });
+      await SFX.prizeReveal();
+      confetti({ particleCount: 200, spread: 100, origin: { y: 0.4 }, colors: ['#fbbf24', '#f59e0b'] });
+
+      // After 3s, Reagan steals it
+      setTimeout(() => {
+        SFX.spitefulLaugh();
+        trapTile(landedTile.id, CONSOLATION_PRIZE);
+        setPrizeOverlay({ name: '👹 REAGAN STOLE IT!', emoji: '👹', student: landedTile.studentName, rare: false });
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 }, colors: ['#ef4444', '#dc2626'] });
+      }, 3000);
+      return;
+    }
+
     revealTile(landedTile.id, prize.name);
 
-    // Extract emoji from prize name (first char if emoji)
     const emojiMatch = prize.name.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u);
     const emoji = emojiMatch ? emojiMatch[0] : '🎁';
 
@@ -107,14 +131,14 @@ export const LottoWheel = () => {
       name: prize.name,
       emoji,
       student: landedTile.studentName,
-      rare: prize.tier === 'legendary',
+      rare: prize.tier === 'rare',
     });
 
     await SFX.prizeReveal();
-    if (prize.tier === 'legendary') {
+    if (prize.tier === 'rare') {
       confetti({ particleCount: 300, spread: 120, origin: { y: 0.4 }, colors: ['#fbbf24', '#f59e0b'] });
     }
-  }, [landedTile, rollPrize, revealTile]);
+  }, [landedTile, rollPrize, revealTile, trapTile]);
 
   const handleClose = () => {
     if (spinning) return;
