@@ -311,4 +311,23 @@ export const useBoardStore = create<BoardState>()(
     setCurriculumTopic: (topic) =>
       set((s) => updateCurrentClass(s, () => ({ curriculumTopic: topic }))),
   };
-});
+    },
+    {
+      name: 'prize-board-storage',
+      partialize: (state) => ({
+        currentClass: state.currentClass,
+        classes: state.classes,
+      }),
+      onRehydrate: () => (state) => {
+        if (state) {
+          const data = state.classes[state.currentClass];
+          state.tiles = data.tiles;
+          state.roster = data.roster;
+          state.prizes = data.prizes;
+          state.spins = data.spins;
+          state.curriculumTopic = data.curriculumTopic;
+        }
+      },
+    }
+  )
+);
