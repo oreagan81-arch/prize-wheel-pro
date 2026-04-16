@@ -8,7 +8,6 @@ export interface Tile {
   studentName?: string;
   prize?: string;
   isBomb?: boolean;
-  isTrap?: boolean;       // Whammy Trap flag
   isTrapped?: boolean;    // Was this tile actually trapped on reveal?
 }
 
