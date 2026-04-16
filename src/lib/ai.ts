@@ -53,16 +53,14 @@ export async function getCurriculumQuestion(
   grade?: number,
   excludeIds?: string[]
 ): Promise<CurriculumQuestion | null> {
-  const { data, error } = await supabase.functions.invoke('get-question', {
-    body: { subject, grade, excludeIds },
-  });
+  const { data, error } = await invokeWithRetry('get-question', { subject, grade, excludeIds });
 
   if (error) {
     console.error('get-question error:', error);
     return null;
   }
 
-  if (data?.exhausted) return null; // No more questions
+  if (data?.exhausted) return null;
 
   return data as CurriculumQuestion;
 }
@@ -71,9 +69,7 @@ export async function validateAnswer(
   questionId: string,
   answer: string
 ): Promise<{ correct: boolean; correctAnswer: string } | null> {
-  const { data, error } = await supabase.functions.invoke('validate-answer', {
-    body: { questionId, answer },
-  });
+  const { data, error } = await invokeWithRetry('validate-answer', { questionId, answer });
 
   if (error) {
     console.error('validate-answer error:', error);
