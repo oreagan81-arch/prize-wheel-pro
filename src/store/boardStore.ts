@@ -53,6 +53,7 @@ interface BoardState {
   toggleTileSelection: (id: number) => void;
   confirmAssignment: () => void;
   revealTile: (id: number, prize: string) => void;
+  luckyStrike: () => number | null; // returns tile id or null
   trapTile: (id: number, consolation: string) => void;
   addSpins: (count: number) => void;
   useSpins: (count: number) => void;
@@ -236,6 +237,26 @@ export const useBoardStore = create<BoardState>((set, get) => {
           tiles: newTiles,
         };
       }),
+
+    luckyStrike: () => {
+      const s = get();
+      if (!s.selectedStudent) return null;
+      const emptyTiles = s.tiles.filter((t) => t.state === 'empty');
+      if (emptyTiles.length === 0) return null;
+      const target = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+      const newTiles = s.tiles.map((t) =>
+        t.id === target.id
+          ? { ...t, state: 'assigned' as TileState, studentName: s.selectedStudent! }
+          : t
+      );
+      const cls = s.currentClass;
+      const newClassData = { ...s.classes[cls], tiles: newTiles };
+      set({
+        classes: { ...s.classes, [cls]: newClassData },
+        tiles: newTiles,
+      });
+      return target.id;
+    },
 
     trapTile: (id, consolation) =>
       set((s) => {
