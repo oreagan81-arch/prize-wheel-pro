@@ -8,9 +8,10 @@ export const InventoryPanel = () => {
   const [open, setOpen] = useState(false);
   const tiles = useBoardStore((s) => s.tiles);
 
+  const assigned = tiles.filter((t) => t.state === 'assigned' || t.state === 'revealed').length;
   const revealed = tiles.filter((t) => t.state === 'revealed').length;
   const total = tiles.length;
-  const clearance = Math.round((revealed / total) * 100);
+  const clearance = Math.round((assigned / total) * 100);
 
   // Count remaining prizes by name (assigned but not revealed)
   const counts: Record<string, number> = {};

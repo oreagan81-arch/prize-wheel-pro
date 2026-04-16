@@ -2,10 +2,20 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type AIMode = 'scholarly_sprint' | 'voids_paradox' | 'mind_bender' | 'reagan' | 'riddle' | 'blessing' | 'mystery_box' | 'theme' | 'whammy_taunt';
 
+async function invokeWithRetry(fnName: string, body: any, retries = 5): Promise<any> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const { data, error } = await supabase.functions.invoke(fnName, { body });
+    if (!error) return { data, error: null };
+    console.warn(`Attempt ${attempt + 1} failed for ${fnName}:`, error);
+    if (attempt < retries - 1) {
+      await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+    }
+  }
+  return { data: null, error: new Error(`Failed after ${retries} retries`) };
+}
+
 export async function callPrizeBoardAI(mode: AIMode, theme?: string, topic?: string) {
-  const { data, error } = await supabase.functions.invoke('prize-board-ai', {
-    body: { mode, theme, topic },
-  });
+  const { data, error } = await invokeWithRetry('prize-board-ai', { mode, theme, topic });
 
   if (error) {
     console.error('AI function error:', error);
