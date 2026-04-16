@@ -50,9 +50,21 @@ export const ConfigModal = () => {
     setTopicInput(curriculumTopic);
   }, [roster, curriculumTopic]);
 
+  // Auto-save roster on every change (debounced)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const parsed = parseRoster(rosterText);
+      if (parsed.length > 0 || rosterText.trim() === '') {
+        setRoster(parsed);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [rosterText, setRoster]);
+
   const handleSaveRoster = () => {
     const parsed = parseRoster(rosterText);
     setRoster(parsed);
+    SFX.confirm();
   };
 
   const handleSaveTopic = () => {
