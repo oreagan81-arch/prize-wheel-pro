@@ -174,11 +174,11 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
 
       // Normal reveal
       revealTile(tile.id, finalName);
-      setRevealedPrize({ name: finalName, emoji, rare: prize.tier === 'legendary' });
+      setRevealedPrize({ name: finalName, emoji, rare: prize.tier === 'rare' });
       setShowReveal(true);
 
       SFX.prizeReveal();
-      if (prize.tier === 'legendary') {
+      if (prize.tier === 'rare') {
         confetti({ particleCount: 300, spread: 120, origin: { y: 0.4 }, colors: ['#fbbf24', '#f59e0b'] });
       } else {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
