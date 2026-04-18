@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
 
 export type TileState = 'empty' | 'assigned' | 'revealed' | 'bomb';
 
@@ -64,6 +64,9 @@ interface BoardState {
   setPrizes: (prizes: Prize[]) => void;
   regeneratePrizes: (newPrizes: Prize[]) => void;
   setCurriculumTopic: (topic: string) => void;
+  
+  // Database loader
+  loadFromDatabase: () => Promise<void>;
 }
 
 // 100-square weighted prize tables per class
@@ -146,9 +149,7 @@ const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Par
   };
 };
 
-export const useBoardStore = create<BoardState>()(
-  persist(
-    (set, get) => {
+export const useBoardStore = create<BoardState>()((set, get) => {
   const initialClass: ClassName = 'homeroom';
   const initialClasses: Record<ClassName, ClassData> = {
     homeroom: createClassData('homeroom'),
@@ -185,13 +186,18 @@ export const useBoardStore = create<BoardState>()(
         selectionMode: false,
         selectedTiles: [],
       });
+      // Optionally trigger loadFromDatabase() here if you want to ensure fresh data on switch
+      get().loadFromDatabase(); 
     },
 
     initBoard: () =>
       set((s) => updateCurrentClass(s, () => ({ tiles: createEmptyTiles(), spins: 0 }))),
 
-    setRoster: (names) =>
-      set((s) => updateCurrentClass(s, () => ({ roster: names }))),
+    setRoster: async (names) => {
+      set((s) => updateCurrentClass(s, () => ({ roster: names })));
+      const cls = get().currentClass;
+      await supabase.from('class_configs').upsert({ class_id: cls, roster: names });
+    },
 
     selectStudent: (name) =>
       set({ selectedStudent: name, selectionMode: !!name, selectedTiles: [] }),
@@ -302,22 +308,41 @@ export const useBoardStore = create<BoardState>()(
     setLottoOpen: (open) => set({ lottoOpen: open }),
     setAiGameOpen: (open) => set({ aiGameOpen: open }),
 
-    setPrizes: (prizes) =>
-      set((s) => updateCurrentClass(s, () => ({ prizes }))),
-
-    regeneratePrizes: (newPrizes) =>
-      set((s) => updateCurrentClass(s, () => ({ prizes: newPrizes, tiles: createEmptyTiles(), spins: 0 }))),
-
-    setCurriculumTopic: (topic) =>
-      set((s) => updateCurrentClass(s, () => ({ curriculumTopic: topic }))),
-  };
+    setPrizes: async (prizes) => {
+      set((s) => updateCurrentClass(s, () => ({ prizes })));
+      const cls = get().currentClass;
+      await supabase.from('class_configs').upsert({ class_id: cls, prizes: prizes });
     },
-    {
-      name: 'prize-board-storage',
-      partialize: (state) => ({
-        currentClass: state.currentClass,
-        classes: state.classes,
-      }),
+
+    regeneratePrizes: async (newPrizes) => {
+      set((s) => updateCurrentClass(s, () => ({ prizes: newPrizes, tiles: createEmptyTiles(), spins: 0 })));
+      const cls = get().currentClass;
+      await supabase.from('class_configs').upsert({ class_id: cls, prizes: newPrizes });
+    },
+
+    setCurriculumTopic: async (topic) => {
+      set((s) => updateCurrentClass(s, () => ({ curriculumTopic: topic })));
+      const cls = get().currentClass;
+      await supabase.from('class_configs').upsert({ class_id: cls, curriculum_topic: topic });
+    },
+    
+    loadFromDatabase: async () => {
+      const cls = get().currentClass;
+      const { data, error } = await supabase
+        .from('class_configs')
+        .select('*')
+        .eq('class_id', cls)
+        .single();
+
+      if (data && !error) {
+        set((s) => updateCurrentClass(s, () => ({
+          roster: data.roster || [],
+          prizes: data.prizes || s.classes[cls].prizes, // Fallback to initial prizes if empty
+          curriculumTopic: data.curriculum_topic || '',
+        })));
+      } else if (error && error.code !== 'PGRST116') {
+         console.error("Error loading config:", error);
+      }
     }
-  )
-);
+  };
+});
