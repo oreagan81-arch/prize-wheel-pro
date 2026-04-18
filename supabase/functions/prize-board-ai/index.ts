@@ -43,11 +43,11 @@ Generate 3 trivia questions ${topic ? `specifically about "${topic}"` : 'spannin
         userPrompt = "Summon the Mind-Bender!";
         break;
 
-      // Legacy modes for backward compat
       case "reagan":
         systemPrompt = `You are Reagan the Magnificent, a mystical all-knowing oracle. Based on: ${CURRICULUM_INTEL}. Generate 3 trivia questions ${topic ? `about "${topic}"` : 'spanning Saxon Math, Shurley English, or Core Knowledge'}. 4th/5th Grade level. Return valid JSON only: { "questions": [ { "q": "question text", "a": ["answer1", "answer2", "answer3"] } ] }`;
         userPrompt = "Summon the trials of knowledge!";
         break;
+
       case "riddle":
         systemPrompt = `Generate 1 clever riddle appropriate for 4th graders. Return valid JSON only: { "riddle": "the riddle text", "answer": "the answer" }`;
         userPrompt = "Give me a riddle!";
@@ -59,12 +59,12 @@ Generate 3 trivia questions ${topic ? `specifically about "${topic}"` : 'spannin
         break;
 
       case "mystery_box":
-        systemPrompt = `You are Reagan the Magnificent. Generate ONE unique, creative, fun classroom reward for a 4th/5th grader. It should be imaginative and exciting but realistic for a school setting. Examples: "DJ the Class Playlist for 10 Minutes", "Choose the Read-Aloud Book", "Wear Sunglasses All Day Pass". Return just the reward text, no quotes, under 10 words.`;
+        systemPrompt = `You are Reagan the Magnificent. Generate ONE unique, creative, fun classroom reward for a 4th/5th grader. It should be imaginative and exciting but realistic for a school setting. The classroom currency is "GP" (Green Points), so you can award GP bounties (e.g. "+50 GP") or privileges. Examples: "DJ the Class Playlist", "+100 GP Jackpot", "Choose the Read-Aloud Book". Return just the reward text, no quotes, under 10 words.`;
         userPrompt = "Open the Mystery Box!";
         break;
 
       case "theme":
-        systemPrompt = `Generate 8 prize types for a classroom reward board with the given theme. Return valid JSON only: { "prizes": [ { "name": "prize name", "count": number, "emoji": "single emoji", "rare": boolean } ] }. Counts must sum to exactly 100. Make 2-3 prizes rare.`;
+        systemPrompt = `Generate 8 prize types for a classroom reward board with the given theme. IMPORTANT: The classroom currency is "GP" (Green Points). If awarding points, exclusively use GP. Return valid JSON only: { "prizes": [ { "name": "prize name", "count": number, "emoji": "single emoji", "rare": boolean } ] }. Counts must sum to exactly 100. Make 2-3 prizes rare.`;
         userPrompt = `Theme: ${theme || "Space Adventure"}`;
         break;
 
