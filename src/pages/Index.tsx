@@ -1,3 +1,5 @@
+import { useEffect } from 'react'; // 1. ADD THIS IMPORT
+import { useBoardStore } from '@/store/boardStore';
 import { BoardGrid } from '@/components/BoardGrid';
 import { BoardHeader } from '@/components/BoardHeader';
 import { ConfigModal } from '@/components/ConfigModal';
@@ -6,6 +8,17 @@ import { LottoWheel } from '@/components/LottoWheel';
 import { ReaganGame } from '@/components/ReaganGame';
 
 const Index = () => {
+  // 2. ADD THESE LINES TO PULL IN THE DATABASE LOADER
+  const loadFromDatabase = useBoardStore((state: any) => state.loadFromDatabase);
+  const currentClass = useBoardStore((state: any) => state.currentClass);
+
+  // 3. ADD THIS USEEFFECT BLOCK
+  // This says: "When the app opens, or when the class changes, run the database loader."
+  useEffect(() => {
+    loadFromDatabase();
+  }, [currentClass, loadFromDatabase]);
+
+  // Everything below here stays exactly the same
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <ParticleBackground />
