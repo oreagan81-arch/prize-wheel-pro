@@ -1,94 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PrizeRevealOverlay } from './PrizeRevealOverlay';
-import { WhammyOverlay } from './WhammyOverlay';
-import { useBoardStore } from '@/store/boardStore';
+import { WhammyOverlay } from './WhammyOverlay'; // Assuming this exists or we'll create it
 import { SFX } from '@/lib/sfx';
 
-export const BoardTile = ({ tile }: { tile: any }) => {
+export const BoardTile = ({ tile, onReveal }) => {
+  const [phase, setPhase] = useState<'idle' | 'celebrate' | 'warning' | 'trapped'>('idle');
   const [showReveal, setShowReveal] = useState(false);
-  const [whammyActive, setWhammyActive] = useState(false);
-  const revealTile = useBoardStore((s) => s.revealTile);
-  const trapTile = useBoardStore((s) => s.trapTile);
 
-  const handleTileClick = () => {
+  const handleClick = () => {
     if (tile.state !== 'assigned') return;
 
-    // PHASE 1: The Celebration (Fake-out)
+    // Phase 1: The "Fake Out" Celebration
     setShowReveal(true);
-    SFX.prizeReveal();
+    setPhase('celebrate');
+    SFX.prizeReveal(); 
 
-    if (tile.isBomb || tile.isTrapped) {
-      // PHASE 2: Trigger Whammy after 3 seconds of "fake" joy
+    if (tile.isTrap) {
+      // Phase 2: Start the Ominous Transition after 3 seconds
       setTimeout(() => {
-        setShowReveal(false); 
-        setWhammyActive(true); 
+        setPhase('warning');
+        setShowReveal(false); // Close the happy prize popup
+        SFX.warningAlert();    // Start the red pulsing/ominous sound
       }, 3000);
-    } else {
-      // Normal non-trap reveal
-      revealTile(tile.id, tile.prize);
-    }
-  };
 
-  const handleWhammyComplete = () => {
-    setWhammyActive(false);
-    // Final Phase: Update database with the consolation prize
-    trapTile(tile.id, "🎟️ +2 GP (Consolation)");
+      // Phase 3: The Final Strike after 10 seconds total
+      setTimeout(() => {
+        setPhase('trapped');
+        onReveal(tile.id, 'trapped'); // This tells the store/Supabase it's gone
+        SFX.whammyTaunt();
+      }, 10000);
+    } else {
+      // Normal reveal logic
+      onReveal(tile.id, tile.prize);
+    }
   };
 
   return (
     <>
-      {/* --- 1. OVERLAYS (Pinned to top so they don't unmount) --- */}
+      {/* --- OVERLAYS (Outside the conditionals so they persist) --- */}
       {showReveal && (
-        <PrizeRevealOverlay
-          open={showReveal}
-          onClose={() => setShowReveal(false)}
-          prizeName={tile.prize}
-          studentName={tile.studentName}
-          isRare={tile.prize?.includes('🏆') || tile.prize?.includes('📦')}
+        <PrizeRevealOverlay 
+          prize={tile.prize} 
+          onClose={() => setShowReveal(false)} 
         />
       )}
 
-      {whammyActive && (
+      {phase === 'warning' && (
         <WhammyOverlay 
+          phase="warning" 
           fakePrize={tile.prize} 
-          onComplete={handleWhammyComplete} 
+          message="Wait... Reagan senses something..."
         />
       )}
 
-      {/* --- 2. TILE VISUALS --- */}
+      {phase === 'trapped' && (
+        <WhammyOverlay 
+          phase="trapped" 
+          message="REAGAN HAS CLAIMED YOUR PRIZE!" 
+        />
+      )}
+
+      {/* --- TILE RENDERING --- */}
       <div 
-        onClick={handleTileClick}
-        className={`
-          w-full aspect-square rounded-lg flex items-center justify-center cursor-pointer transition-all duration-300
-          ${tile.state === 'empty' ? 'bg-slate-800/40 border border-white/5' : ''}
-          ${tile.state === 'assigned' ? 'bg-neon-emerald/10 border border-neon-emerald/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : ''}
-          ${tile.state === 'revealed' ? 'bg-slate-900 border border-white/10 opacity-60' : ''}
-        `}
+        onClick={handleClick}
+        className={`relative w-full h-full border rounded-lg transition-all 
+          ${tile.state === 'revealed' ? 'bg-slate-900/50' : 'bg-slate-800'}
+          ${phase === 'warning' ? 'animate-pulse border-red-500' : 'border-white/10'}`}
       >
-        {/* ASSIGNED STATE: No-wrap with ellipsis for long names */}
-        {tile.state === 'assigned' && (
-          <span className="
-            text-[10px] sm:text-xs 
-            font-display text-neon-emerald uppercase 
-            tracking-tighter text-center px-1 
-            block w-full 
-            whitespace-nowrap overflow-hidden text-ellipsis
-          ">
-            {tile.studentName}
-          </span>
-        )}
-        
-        {/* REVEALED STATE: Clean, truncated prize text */}
+        {tile.state === 'assigned' && <span className="text-white">{tile.studentName}</span>}
         {tile.state === 'revealed' && (
-          <div className="text-center px-1 w-full">
-            <span className="text-[10px] text-white/40 block line-through truncate">
-              {tile.prize}
-            </span>
-            {tile.isTrapped && (
-              <span className="text-[8px] text-red-500 font-bold uppercase block">
-                Stolen
-              </span>
-            )}
+          <div className="flex flex-col items-center">
+             <span className="text-xs text-muted-foreground line-through">{tile.prize}</span>
+             <span className="text-red-500 font-bold">STOLEN</span>
           </div>
         )}
       </div>
