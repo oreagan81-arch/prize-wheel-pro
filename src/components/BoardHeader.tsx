@@ -2,6 +2,7 @@ import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boar
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
 import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3 } from 'lucide-react';
+import { toast } from 'sonner';
 import { InventoryPanel } from './InventoryPanel';
 import {
   Select,
@@ -38,7 +39,10 @@ export const BoardHeader = () => {
     setLottoOpen,
     setAiGameOpen,
     initBoard,
+    tiles,
   } = useBoardStore();
+
+  const emptyTilesLeft = tiles.filter((t) => t.state === 'empty').length;
 
   return (
     <header className="glass-panel-strong px-4 py-3 sm:px-6 sm:py-4 flex flex-wrap items-center gap-3">
@@ -119,14 +123,18 @@ export const BoardHeader = () => {
           {selectedStudent && (
             <Button
               size="sm"
+              disabled={emptyTilesLeft === 0}
               onClick={() => {
                 const tileId = luckyStrike();
                 if (tileId) {
                   SFX.prizeReveal();
                   import('canvas-confetti').then(m => m.default({ particleCount: 60, spread: 50, origin: { y: 0.3 }, colors: ['#10b981', '#8b5cf6', '#f59e0b'] }));
+                  toast.success(`🎯 Lucky Strike! Tile ${tileId} → ${selectedStudent}`);
+                } else {
+                  toast.error('No empty tiles left on the board');
                 }
               }}
-              className="bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30"
+              className="bg-neon-amber/20 border border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30 disabled:opacity-40"
             >
               <Dice3 className="w-4 h-4 mr-1" />
               Lucky Strike

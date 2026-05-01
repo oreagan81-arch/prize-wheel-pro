@@ -9,7 +9,7 @@ export interface Tile {
   studentName?: string;
   prize?: string;
   isBomb?: boolean;
-  isTrapped?: boolean;    // Was this tile actually trapped on reveal?
+  isTrapped?: boolean;
 }
 
 export interface Prize {
@@ -38,6 +38,10 @@ interface BoardState {
   lottoOpen: boolean;
   aiGameOpen: boolean;
 
+  // Hydration tracking — true once loadFromDatabase has resolved for this class.
+  // Prevents stale UI state from overwriting freshly loaded server data.
+  hydratedClasses: Record<ClassName, boolean>;
+
   // Derived accessors
   tiles: Tile[];
   roster: string[];
@@ -48,28 +52,28 @@ interface BoardState {
   // Actions
   switchClass: (name: ClassName) => void;
   initBoard: () => void;
-  setRoster: (names: string[]) => void;
+  setRosterLocal: (names: string[]) => void;
+  saveRoster: (names: string[]) => Promise<void>;
   selectStudent: (name: string | null) => void;
   toggleSelectionMode: () => void;
   toggleTileSelection: (id: number) => void;
   confirmAssignment: () => void;
   revealTile: (id: number, prize: string) => void;
-  luckyStrike: () => number | null; // returns tile id or null
+  luckyStrike: () => number | null;
   trapTile: (id: number, consolation: string) => void;
   addSpins: (count: number) => void;
   useSpins: (count: number) => void;
   setConfigOpen: (open: boolean) => void;
   setLottoOpen: (open: boolean) => void;
   setAiGameOpen: (open: boolean) => void;
-  setPrizes: (prizes: Prize[]) => void;
-  regeneratePrizes: (newPrizes: Prize[]) => void;
-  setCurriculumTopic: (topic: string) => void;
-  
-  // Database loader
-  loadFromDatabase: () => Promise<void>;
+  setPrizes: (prizes: Prize[]) => Promise<void>;
+  regeneratePrizes: (newPrizes: Prize[]) => Promise<void>;
+  setCurriculumTopic: (topic: string) => Promise<void>;
+
+  loadFromDatabase: (cls?: ClassName) => Promise<void>;
+  isClassHydrated: (cls?: ClassName) => boolean;
 }
 
-// 100-square weighted prize tables per class
 const sharedPrizes: Prize[] = [
   { name: '🏆 Large 3D Print', weight: 2, tier: 'rare' },
   { name: '📦 Treasure Box', weight: 3, tier: 'rare' },
@@ -101,9 +105,8 @@ const classPrizeMap: Record<ClassName, Prize[]> = {
   ],
 };
 
-// Rare prize names for Reagan Trap detection
 export const RARE_PRIZE_NAMES = ['🏆 Large 3D Print', '📦 Treasure Box'];
-export const REAGAN_TRAP_CHANCE = 0.15; // 15% on rare prizes
+export const REAGAN_TRAP_CHANCE = 0.15;
 export const CONSOLATION_PRIZE = '🎟️ +2 Stamps (Consolation)';
 
 const BOMB_CHANCE = 0.05;
@@ -133,21 +136,28 @@ const classLabels: Record<ClassName, string> = {
 
 export { CLASS_NAMES, classLabels };
 
-const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Partial<ClassData>): Partial<BoardState> => {
-  const cls = state.currentClass;
+const updateClass = (
+  state: BoardState,
+  cls: ClassName,
+  updater: (data: ClassData) => Partial<ClassData>
+): Partial<BoardState> => {
   const current = state.classes[cls];
   const updates = updater(current);
   const newClassData = { ...current, ...updates };
   const newClasses = { ...state.classes, [cls]: newClassData };
-  return {
-    classes: newClasses,
-    tiles: newClassData.tiles,
-    roster: newClassData.roster,
-    prizes: newClassData.prizes,
-    spins: newClassData.spins,
-    curriculumTopic: newClassData.curriculumTopic,
-  };
+  const patch: Partial<BoardState> = { classes: newClasses };
+  if (cls === state.currentClass) {
+    patch.tiles = newClassData.tiles;
+    patch.roster = newClassData.roster;
+    patch.prizes = newClassData.prizes;
+    patch.spins = newClassData.spins;
+    patch.curriculumTopic = newClassData.curriculumTopic;
+  }
+  return patch;
 };
+
+const updateCurrentClass = (state: BoardState, updater: (data: ClassData) => Partial<ClassData>) =>
+  updateClass(state, state.currentClass, updater);
 
 export const useBoardStore = create<BoardState>()((set, get) => {
   const initialClass: ClassName = 'homeroom';
@@ -156,6 +166,12 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     math: createClassData('math'),
     reading: createClassData('reading'),
   };
+
+  // Kick off background hydration for the initial class.
+  // (Done after store creation via setTimeout to avoid TDZ issues.)
+  setTimeout(() => {
+    get().loadFromDatabase(initialClass).catch((e) => console.error('Initial hydrate failed:', e));
+  }, 0);
 
   return {
     currentClass: initialClass,
@@ -166,12 +182,15 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     configOpen: false,
     lottoOpen: false,
     aiGameOpen: false,
+    hydratedClasses: { homeroom: false, math: false, reading: false },
 
     tiles: initialClasses[initialClass].tiles,
     roster: initialClasses[initialClass].roster,
     prizes: initialClasses[initialClass].prizes,
     spins: initialClasses[initialClass].spins,
     curriculumTopic: initialClasses[initialClass].curriculumTopic,
+
+    isClassHydrated: (cls) => get().hydratedClasses[cls ?? get().currentClass],
 
     switchClass: (name) => {
       const data = get().classes[name];
@@ -186,17 +205,30 @@ export const useBoardStore = create<BoardState>()((set, get) => {
         selectionMode: false,
         selectedTiles: [],
       });
-      // Optionally trigger loadFromDatabase() here if you want to ensure fresh data on switch
-      get().loadFromDatabase(); 
+      // Refresh from DB if not yet hydrated for this class
+      if (!get().hydratedClasses[name]) {
+        get().loadFromDatabase(name).catch((e) => console.error('Switch hydrate failed:', e));
+      }
     },
 
     initBoard: () =>
       set((s) => updateCurrentClass(s, () => ({ tiles: createEmptyTiles(), spins: 0 }))),
 
-    setRoster: async (names) => {
-      set((s) => updateCurrentClass(s, () => ({ roster: names })));
+    // Local-only roster update (no DB write). Used by typing in the textarea.
+    setRosterLocal: (names) =>
+      set((s) => updateCurrentClass(s, () => ({ roster: names }))),
+
+    // Explicit save: writes to DB. Throws on failure so UI can toast.
+    saveRoster: async (names) => {
       const cls = get().currentClass;
-      await supabase.from('class_configs').upsert({ class_id: cls, roster: names });
+      set((s) => updateClass(s, cls, () => ({ roster: names })));
+      const { error } = await supabase
+        .from('class_configs')
+        .upsert({ class_id: cls, roster: names as unknown as any }, { onConflict: 'class_id' });
+      if (error) {
+        console.error('saveRoster failed:', error);
+        throw error;
+      }
     },
 
     selectStudent: (name) =>
@@ -223,11 +255,8 @@ export const useBoardStore = create<BoardState>()((set, get) => {
             ? { ...t, state: 'assigned' as TileState, studentName: s.selectedStudent! }
             : t
         );
-        const cls = s.currentClass;
-        const newClassData = { ...s.classes[cls], tiles: newTiles };
         return {
-          classes: { ...s.classes, [cls]: newClassData },
-          tiles: newTiles,
+          ...updateCurrentClass(s, () => ({ tiles: newTiles })),
           selectedStudent: null,
           selectionMode: false,
           selectedTiles: [],
@@ -239,12 +268,7 @@ export const useBoardStore = create<BoardState>()((set, get) => {
         const newTiles = s.tiles.map((t) =>
           t.id === id ? { ...t, state: 'revealed' as TileState, prize } : t
         );
-        const cls = s.currentClass;
-        const newClassData = { ...s.classes[cls], tiles: newTiles };
-        return {
-          classes: { ...s.classes, [cls]: newClassData },
-          tiles: newTiles,
-        };
+        return updateCurrentClass(s, () => ({ tiles: newTiles }));
       }),
 
     luckyStrike: () => {
@@ -258,12 +282,7 @@ export const useBoardStore = create<BoardState>()((set, get) => {
           ? { ...t, state: 'assigned' as TileState, studentName: s.selectedStudent! }
           : t
       );
-      const cls = s.currentClass;
-      const newClassData = { ...s.classes[cls], tiles: newTiles };
-      set({
-        classes: { ...s.classes, [cls]: newClassData },
-        tiles: newTiles,
-      });
+      set((st) => updateCurrentClass(st, () => ({ tiles: newTiles })));
       return target.id;
     },
 
@@ -273,76 +292,77 @@ export const useBoardStore = create<BoardState>()((set, get) => {
           t.id === id ? { ...t, state: 'revealed' as TileState, prize: consolation, isTrapped: true } : t
         );
         const newSpins = Math.max(0, s.spins - 1);
-        const cls = s.currentClass;
-        const newClassData = { ...s.classes[cls], tiles: newTiles, spins: newSpins };
-        return {
-          classes: { ...s.classes, [cls]: newClassData },
-          tiles: newTiles,
-          spins: newSpins,
-        };
+        return updateCurrentClass(s, () => ({ tiles: newTiles, spins: newSpins }));
       }),
 
     addSpins: (count) =>
-      set((s) => {
-        const newSpins = s.spins + count;
-        const cls = s.currentClass;
-        const newClassData = { ...s.classes[cls], spins: newSpins };
-        return {
-          classes: { ...s.classes, [cls]: newClassData },
-          spins: newSpins,
-        };
-      }),
+      set((s) => updateCurrentClass(s, () => ({ spins: s.spins + count }))),
 
     useSpins: (count) =>
-      set((s) => {
-        const newSpins = Math.max(0, s.spins - count);
-        const cls = s.currentClass;
-        const newClassData = { ...s.classes[cls], spins: newSpins };
-        return {
-          classes: { ...s.classes, [cls]: newClassData },
-          spins: newSpins,
-        };
-      }),
+      set((s) => updateCurrentClass(s, () => ({ spins: Math.max(0, s.spins - count) }))),
 
     setConfigOpen: (open) => set({ configOpen: open }),
     setLottoOpen: (open) => set({ lottoOpen: open }),
     setAiGameOpen: (open) => set({ aiGameOpen: open }),
 
     setPrizes: async (prizes) => {
-      set((s) => updateCurrentClass(s, () => ({ prizes })));
       const cls = get().currentClass;
-      await supabase.from('class_configs').upsert({ class_id: cls, prizes: prizes });
+      set((s) => updateClass(s, cls, () => ({ prizes })));
+      const { error } = await supabase
+        .from('class_configs')
+        .upsert({ class_id: cls, prizes: prizes as unknown as any }, { onConflict: 'class_id' });
+      if (error) throw error;
     },
 
     regeneratePrizes: async (newPrizes) => {
-      set((s) => updateCurrentClass(s, () => ({ prizes: newPrizes, tiles: createEmptyTiles(), spins: 0 })));
       const cls = get().currentClass;
-      await supabase.from('class_configs').upsert({ class_id: cls, prizes: newPrizes });
+      set((s) => updateClass(s, cls, () => ({ prizes: newPrizes, tiles: createEmptyTiles(), spins: 0 })));
+      const { error } = await supabase
+        .from('class_configs')
+        .upsert({ class_id: cls, prizes: newPrizes as unknown as any }, { onConflict: 'class_id' });
+      if (error) throw error;
     },
 
     setCurriculumTopic: async (topic) => {
-      set((s) => updateCurrentClass(s, () => ({ curriculumTopic: topic })));
       const cls = get().currentClass;
-      await supabase.from('class_configs').upsert({ class_id: cls, curriculum_topic: topic });
+      set((s) => updateClass(s, cls, () => ({ curriculumTopic: topic })));
+      const { error } = await supabase
+        .from('class_configs')
+        .upsert({ class_id: cls, curriculum_topic: topic }, { onConflict: 'class_id' });
+      if (error) throw error;
     },
-    
-    loadFromDatabase: async () => {
-      const cls = get().currentClass;
+
+    loadFromDatabase: async (clsArg) => {
+      const cls = clsArg ?? get().currentClass;
       const { data, error } = await supabase
         .from('class_configs')
         .select('*')
         .eq('class_id', cls)
-        .single();
+        .maybeSingle();
 
-      if (data && !error) {
-        set((s) => updateCurrentClass(s, () => ({
-          roster: data.roster || [],
-          prizes: data.prizes || s.classes[cls].prizes, // Fallback to initial prizes if empty
-          curriculumTopic: data.curriculum_topic || '',
-        })));
-      } else if (error && error.code !== 'PGRST116') {
-         console.error("Error loading config:", error);
+      if (error) {
+        console.error('Error loading config:', error);
+        // Mark hydrated anyway so saves can proceed
+        set((s) => ({ hydratedClasses: { ...s.hydratedClasses, [cls]: true } }));
+        return;
       }
-    }
+
+      if (data) {
+        const roster = Array.isArray(data.roster) ? (data.roster as unknown as string[]) : [];
+        const prizes = Array.isArray(data.prizes) && (data.prizes as unknown[]).length > 0
+          ? (data.prizes as unknown as Prize[])
+          : get().classes[cls].prizes;
+        set((s) => ({
+          ...updateClass(s, cls, () => ({
+            roster,
+            prizes,
+            curriculumTopic: data.curriculum_topic || '',
+          })),
+          hydratedClasses: { ...s.hydratedClasses, [cls]: true },
+        }));
+      } else {
+        set((s) => ({ hydratedClasses: { ...s.hydratedClasses, [cls]: true } }));
+      }
+    },
   };
 });
