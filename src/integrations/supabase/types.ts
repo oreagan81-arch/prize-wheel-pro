@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_configs: {
+        Row: {
+          class_id: string
+          curriculum_topic: string | null
+          prizes: Json | null
+          roster: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_id: string
+          curriculum_topic?: string | null
+          prizes?: Json | null
+          roster?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: string
+          curriculum_topic?: string | null
+          prizes?: Json | null
+          roster?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       curriculum_facts: {
         Row: {
           created_at: string
