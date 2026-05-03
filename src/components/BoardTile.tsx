@@ -328,6 +328,9 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
     </>
   );
 
+  // Tile not found (shouldn't happen but guards memo selector)
+  if (!tile) return null;
+
   // Mystery Box loading state
   if (mysteryLoading) {
     return (
