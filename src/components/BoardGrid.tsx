@@ -1,9 +1,10 @@
 import { useBoardStore } from '@/store/boardStore';
 import { BoardTile } from './BoardTile';
 import { motion } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 
 export const BoardGrid = () => {
-  const tileIds = useBoardStore((s) => s.tiles.map((t) => t.id));
+  const tileIds = useBoardStore(useShallow((s) => s.tiles.map((t) => t.id)));
 
   return (
     <motion.div
