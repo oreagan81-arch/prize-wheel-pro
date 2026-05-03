@@ -53,7 +53,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
   const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 300, damping: 30 });
   const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 300, damping: 30 });
 
-  const isSelected = selectedTiles.includes(tile.id);
+  const isSelected = tile ? selectedTiles.includes(tile.id) : false;
 
   // Phase 1 → Phase 2 transition: after 3s of celebration, start warnings
   useEffect(() => {
