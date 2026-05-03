@@ -412,3 +412,6 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
     </>
   );
 };
+
+export const BoardTile = memo(BoardTileImpl);
+
