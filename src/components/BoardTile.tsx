@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useBoardStore, type Tile, RARE_PRIZE_NAMES, REAGAN_TRAP_CHANCE, CONSOLATION_PRIZE } from '@/store/boardStore';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useCallback, useRef, useState, useEffect } from 'react';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
 import { PrizeRevealOverlay } from './PrizeRevealOverlay';
@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { Bomb, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface BoardTileProps {
-  tile: Tile;
+  tileId: number;
 }
 
 const WHAMMY_TIMER = 10;
