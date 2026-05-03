@@ -11,7 +11,7 @@ export const BoardGrid = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="grid grid-cols-10 gap-1.5 sm:gap-2 p-2 sm:p-4"
+      className="grid grid-cols-10 gap-2 sm:gap-2.5 md:gap-3 p-2 sm:p-3 md:p-4"
     >
       {tileIds.map((id, i) => (
         <motion.div

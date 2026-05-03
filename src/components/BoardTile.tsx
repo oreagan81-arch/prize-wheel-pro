@@ -376,7 +376,8 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleClick}
-          className="aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer"
+          style={{ minWidth: 44, minHeight: 44 }}
+          className="aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer will-change-transform"
         >
           <div className="tile-shimmer absolute inset-0" />
           <span className="text-[10px] text-muted-foreground font-display relative z-10">{tile.id}</span>
@@ -394,21 +395,21 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
       {renderOverlays()}
       <motion.div
         ref={ref}
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+        style={{ rotateX, rotateY, transformStyle: 'preserve-3d', minWidth: 44, minHeight: 44 }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-200
+        className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer will-change-transform
           ${isSelected
             ? 'bg-neon-emerald/20 border-neon-emerald/60 selection-glow'
-            : 'bg-slate-800/60 backdrop-blur-md border-white/15 hover:border-neon-emerald/40 hover:bg-slate-700/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+            : 'bg-slate-800/60 border-white/15 hover:border-neon-emerald/40'
           }
           ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
         `}
       >
-        <span className={`font-display text-2xl sm:text-3xl font-black ${isSelected ? 'text-neon-emerald drop-shadow-[0_2px_4px_rgba(16,185,129,0.5)]' : 'text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'}`}>
+        <span className={`font-display text-2xl sm:text-3xl font-black ${isSelected ? 'text-neon-emerald' : 'text-white/95'}`}>
           {tile.id}
         </span>
       </motion.div>
