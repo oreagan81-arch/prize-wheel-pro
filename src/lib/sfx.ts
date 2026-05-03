@@ -9,6 +9,27 @@ async function ensureAudio() {
   }
 }
 
+/**
+ * Unlock the iOS Web Audio API by starting the audio context and playing
+ * a silent buffer. Call this once on the first user interaction.
+ */
+export async function initializeAudio() {
+  if (audioStarted) return;
+  try {
+    await Tone.start();
+    const ctx = Tone.getContext().rawContext as AudioContext;
+    // Play a silent 0.1s buffer to fully unlock iOS audio
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.1), ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    audioStarted = true;
+  } catch (err) {
+    console.warn('[sfx] initializeAudio failed', err);
+  }
+}
+
 const clickSynth = new Tone.Synth({
   oscillator: { type: 'triangle' },
   envelope: { attack: 0.005, decay: 0.08, sustain: 0, release: 0.1 },
