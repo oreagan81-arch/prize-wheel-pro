@@ -91,35 +91,47 @@
   }
 
   .neon-glow-purple {
-    box-shadow: 0 0 15px hsl(var(--neon-purple) / 0.3),
-                0 0 45px hsl(var(--neon-purple) / 0.1);
+    /* Static, GPU-friendly border-only highlight (no heavy box-shadow) */
+    outline: 1px solid hsl(var(--neon-purple) / 0.35);
+    outline-offset: -1px;
   }
 
+  /* Hardware-accelerated shimmer: a translucent strip translated across the tile */
   .tile-shimmer {
+    pointer-events: none;
+    overflow: hidden;
+    will-change: transform;
+  }
+  .tile-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     background: linear-gradient(
       110deg,
-      transparent 33%,
-      hsl(var(--neon-emerald) / 0.08) 50%,
-      transparent 67%
+      transparent 40%,
+      hsl(var(--neon-emerald) / 0.12) 50%,
+      transparent 60%
     );
-    background-size: 300% 100%;
+    transform: translate3d(-100%, 0, 0);
     animation: shimmer 3s ease-in-out infinite;
+    will-change: transform;
   }
 
   .void-pulse {
     animation: voidPulse 3s ease-in-out infinite;
+    will-change: opacity;
   }
 
   .selection-glow {
-    box-shadow: 0 0 20px hsl(var(--neon-emerald) / 0.5),
-                0 0 60px hsl(var(--neon-emerald) / 0.2),
-                inset 0 0 20px hsl(var(--neon-emerald) / 0.1);
+    /* Replace heavy multi-layer box-shadow with a static border ring */
+    outline: 2px solid hsl(var(--neon-emerald) / 0.55);
+    outline-offset: -2px;
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% { transform: translate3d(-100%, 0, 0); }
+  100% { transform: translate3d(100%, 0, 0); }
 }
 
 @keyframes voidPulse {
