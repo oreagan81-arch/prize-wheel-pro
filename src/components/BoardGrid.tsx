@@ -1,9 +1,10 @@
 import { useBoardStore } from '@/store/boardStore';
 import { BoardTile } from './BoardTile';
 import { motion } from 'framer-motion';
+import { useShallow } from 'zustand/react/shallow';
 
 export const BoardGrid = () => {
-  const tiles = useBoardStore((s) => s.tiles);
+  const tileIds = useBoardStore(useShallow((s) => s.tiles.map((t) => t.id)));
 
   return (
     <motion.div
@@ -12,16 +13,17 @@ export const BoardGrid = () => {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="grid grid-cols-10 gap-1.5 sm:gap-2 p-2 sm:p-4"
     >
-      {tiles.map((tile, i) => (
+      {tileIds.map((id, i) => (
         <motion.div
-          key={tile.id}
+          key={id}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.008, duration: 0.3 }}
         >
-          <BoardTile tile={tile} />
+          <BoardTile tileId={id} />
         </motion.div>
       ))}
     </motion.div>
   );
 };
+

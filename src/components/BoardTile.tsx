@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useBoardStore, type Tile, RARE_PRIZE_NAMES, REAGAN_TRAP_CHANCE, CONSOLATION_PRIZE } from '@/store/boardStore';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useCallback, useRef, useState, useEffect } from 'react';
 import { SFX } from '@/lib/sfx';
 import { callPrizeBoardAI } from '@/lib/ai';
 import { PrizeRevealOverlay } from './PrizeRevealOverlay';
@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { Bomb, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface BoardTileProps {
-  tile: Tile;
+  tileId: number;
 }
 
 const WHAMMY_TIMER = 10;
@@ -21,8 +21,17 @@ const REAGAN_WARNINGS = [
   "REAGAN IS HUNGRY!",
 ];
 
-export const BoardTile = ({ tile }: BoardTileProps) => {
-  const { selectionMode, selectedTiles, selectedStudent, toggleTileSelection, revealTile, trapTile, prizes, useSpins, spins } = useBoardStore();
+const BoardTileImpl = ({ tileId }: BoardTileProps) => {
+  const tile = useBoardStore((s) => s.tiles.find((t) => t.id === tileId));
+  const selectionMode = useBoardStore((s) => s.selectionMode);
+  const selectedTiles = useBoardStore((s) => s.selectedTiles);
+  const selectedStudent = useBoardStore((s) => s.selectedStudent);
+  const toggleTileSelection = useBoardStore((s) => s.toggleTileSelection);
+  const revealTile = useBoardStore((s) => s.revealTile);
+  const trapTile = useBoardStore((s) => s.trapTile);
+  const prizes = useBoardStore((s) => s.prizes);
+  const useSpins = useBoardStore((s) => s.useSpins);
+  const spins = useBoardStore((s) => s.spins);
   const ref = useRef<HTMLDivElement>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealedPrize, setRevealedPrize] = useState<{ name: string; emoji: string; rare: boolean } | null>(null);
@@ -44,7 +53,7 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
   const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 300, damping: 30 });
   const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 300, damping: 30 });
 
-  const isSelected = selectedTiles.includes(tile.id);
+  const isSelected = tile ? selectedTiles.includes(tile.id) : false;
 
   // Phase 1 → Phase 2 transition: after 3s of celebration, start warnings
   useEffect(() => {
@@ -319,6 +328,9 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     </>
   );
 
+  // Tile not found (shouldn't happen but guards memo selector)
+  if (!tile) return null;
+
   // Mystery Box loading state
   if (mysteryLoading) {
     return (
@@ -403,3 +415,6 @@ export const BoardTile = ({ tile }: BoardTileProps) => {
     </>
   );
 };
+
+export const BoardTile = memo(BoardTileImpl);
+
