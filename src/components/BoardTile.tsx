@@ -21,8 +21,17 @@ const REAGAN_WARNINGS = [
   "REAGAN IS HUNGRY!",
 ];
 
-export const BoardTile = ({ tile }: BoardTileProps) => {
-  const { selectionMode, selectedTiles, selectedStudent, toggleTileSelection, revealTile, trapTile, prizes, useSpins, spins } = useBoardStore();
+const BoardTileImpl = ({ tileId }: BoardTileProps) => {
+  const tile = useBoardStore((s) => s.tiles.find((t) => t.id === tileId));
+  const selectionMode = useBoardStore((s) => s.selectionMode);
+  const selectedTiles = useBoardStore((s) => s.selectedTiles);
+  const selectedStudent = useBoardStore((s) => s.selectedStudent);
+  const toggleTileSelection = useBoardStore((s) => s.toggleTileSelection);
+  const revealTile = useBoardStore((s) => s.revealTile);
+  const trapTile = useBoardStore((s) => s.trapTile);
+  const prizes = useBoardStore((s) => s.prizes);
+  const useSpins = useBoardStore((s) => s.useSpins);
+  const spins = useBoardStore((s) => s.spins);
   const ref = useRef<HTMLDivElement>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealedPrize, setRevealedPrize] = useState<{ name: string; emoji: string; rare: boolean } | null>(null);
