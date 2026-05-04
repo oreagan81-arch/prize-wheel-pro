@@ -207,6 +207,7 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     lottoOpen: false,
     aiGameOpen: false,
     hydratedClasses: { homeroom: false, math: false, reading: false },
+    masterPrizes: [],
 
     tiles: initialClasses[initialClass].tiles,
     roster: initialClasses[initialClass].roster,
