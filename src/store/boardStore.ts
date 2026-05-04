@@ -88,6 +88,11 @@ interface BoardState {
   regeneratePrizes: (newPrizes: Prize[]) => Promise<void>;
   setCurriculumTopic: (topic: string) => Promise<void>;
 
+  addMasterPrize: (prize: PrizeDefinition) => void;
+  updateMasterPrize: (id: string, updates: Partial<PrizeDefinition>) => void;
+  deleteMasterPrize: (id: string) => void;
+  toggleWhammy: (prizeId: string, isWhammy: boolean) => void;
+
   loadFromDatabase: (cls?: ClassName) => Promise<void>;
   isClassHydrated: (cls?: ClassName) => boolean;
 }
