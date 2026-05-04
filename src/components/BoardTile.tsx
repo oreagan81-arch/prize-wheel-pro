@@ -26,6 +26,8 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
   const selectionMode = useBoardStore((s) => s.selectionMode);
   const selectedTiles = useBoardStore((s) => s.selectedTiles);
   const selectedStudent = useBoardStore((s) => s.selectedStudent);
+  const pendingStudent = useBoardStore((s) => s.pendingStudent);
+  const assignTileToStudent = useBoardStore((s) => s.assignTileToStudent);
   const toggleTileSelection = useBoardStore((s) => s.toggleTileSelection);
   const revealTile = useBoardStore((s) => s.revealTile);
   const trapTile = useBoardStore((s) => s.trapTile);
