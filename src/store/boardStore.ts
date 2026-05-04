@@ -34,6 +34,7 @@ interface BoardState {
   selectedStudent: string | null;
   selectionMode: boolean;
   selectedTiles: number[];
+  pendingStudent: string | null;
   configOpen: boolean;
   lottoOpen: boolean;
   aiGameOpen: boolean;
@@ -63,6 +64,8 @@ interface BoardState {
   trapTile: (id: number, consolation: string) => void;
   addSpins: (count: number) => void;
   useSpins: (count: number) => void;
+  setPendingStudent: (name: string | null) => void;
+  assignTileToStudent: (id: number, name: string) => boolean;
   setConfigOpen: (open: boolean) => void;
   setLottoOpen: (open: boolean) => void;
   setAiGameOpen: (open: boolean) => void;
@@ -179,6 +182,7 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     selectedStudent: null,
     selectionMode: false,
     selectedTiles: [],
+    pendingStudent: null,
     configOpen: false,
     lottoOpen: false,
     aiGameOpen: false,
@@ -300,6 +304,22 @@ export const useBoardStore = create<BoardState>()((set, get) => {
 
     useSpins: (count) =>
       set((s) => updateCurrentClass(s, () => ({ spins: Math.max(0, s.spins - count) }))),
+
+    setPendingStudent: (name) => set({ pendingStudent: name }),
+
+    assignTileToStudent: (id, name) => {
+      const s = get();
+      const tile = s.tiles.find((t) => t.id === id);
+      if (!tile || tile.state !== 'empty') return false;
+      const newTiles = s.tiles.map((t) =>
+        t.id === id ? { ...t, state: 'assigned' as TileState, studentName: name } : t
+      );
+      set((st) => ({
+        ...updateCurrentClass(st, () => ({ tiles: newTiles })),
+        pendingStudent: null,
+      }));
+      return true;
+    },
 
     setConfigOpen: (open) => set({ configOpen: open }),
     setLottoOpen: (open) => set({ lottoOpen: open }),
