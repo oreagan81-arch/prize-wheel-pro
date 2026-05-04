@@ -346,6 +346,22 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     setLottoOpen: (open) => set({ lottoOpen: open }),
     setAiGameOpen: (open) => set({ aiGameOpen: open }),
 
+    addMasterPrize: (prize) =>
+      set((s) => ({ masterPrizes: [...s.masterPrizes, prize] })),
+
+    updateMasterPrize: (id, updates) =>
+      set((s) => ({
+        masterPrizes: s.masterPrizes.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      })),
+
+    deleteMasterPrize: (id) =>
+      set((s) => ({ masterPrizes: s.masterPrizes.filter((p) => p.id !== id) })),
+
+    toggleWhammy: (prizeId, isWhammy) =>
+      set((s) => ({
+        masterPrizes: s.masterPrizes.map((p) => (p.id === prizeId ? { ...p, isWhammy } : p)),
+      })),
+
     setPrizes: async (prizes) => {
       const cls = get().currentClass;
       set((s) => updateClass(s, cls, () => ({ prizes })));
