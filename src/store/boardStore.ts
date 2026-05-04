@@ -56,6 +56,8 @@ interface BoardState {
   // Prevents stale UI state from overwriting freshly loaded server data.
   hydratedClasses: Record<ClassName, boolean>;
 
+  masterPrizes: PrizeDefinition[];
+
   // Derived accessors
   tiles: Tile[];
   roster: string[];
