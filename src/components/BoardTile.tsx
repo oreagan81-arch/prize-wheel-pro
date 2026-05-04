@@ -414,6 +414,8 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
         className={`aspect-square rounded-lg border flex items-center justify-center cursor-pointer will-change-transform
           ${isSelected
             ? 'bg-neon-emerald/20 border-neon-emerald/60 selection-glow'
+            : pendingStudent
+            ? 'bg-slate-800/60 border-neon-amber/60 ring-2 ring-neon-amber/40 hover:bg-neon-amber/10'
             : 'bg-slate-800/60 border-white/15 hover:border-neon-emerald/40'
           }
           ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
