@@ -20,6 +20,19 @@ export interface Prize {
 
 export type ClassName = 'homeroom' | 'math' | 'reading';
 
+export type Rarity = 'common' | 'rare' | 'legendary';
+export type Roster = 'all' | 'homeroom' | 'math' | 'reading';
+
+export interface PrizeDefinition {
+  id: string;
+  name: string;
+  imageUrl: string;
+  rarity: Rarity;
+  rosters: Roster[];
+  isWhammy: boolean;
+  stockCount: number;
+}
+
 export interface ClassData {
   tiles: Tile[];
   roster: string[];
@@ -42,6 +55,8 @@ interface BoardState {
   // Hydration tracking — true once loadFromDatabase has resolved for this class.
   // Prevents stale UI state from overwriting freshly loaded server data.
   hydratedClasses: Record<ClassName, boolean>;
+
+  masterPrizes: PrizeDefinition[];
 
   // Derived accessors
   tiles: Tile[];
@@ -72,6 +87,11 @@ interface BoardState {
   setPrizes: (prizes: Prize[]) => Promise<void>;
   regeneratePrizes: (newPrizes: Prize[]) => Promise<void>;
   setCurriculumTopic: (topic: string) => Promise<void>;
+
+  addMasterPrize: (prize: PrizeDefinition) => void;
+  updateMasterPrize: (id: string, updates: Partial<PrizeDefinition>) => void;
+  deleteMasterPrize: (id: string) => void;
+  toggleWhammy: (prizeId: string, isWhammy: boolean) => void;
 
   loadFromDatabase: (cls?: ClassName) => Promise<void>;
   isClassHydrated: (cls?: ClassName) => boolean;
@@ -187,6 +207,7 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     lottoOpen: false,
     aiGameOpen: false,
     hydratedClasses: { homeroom: false, math: false, reading: false },
+    masterPrizes: [],
 
     tiles: initialClasses[initialClass].tiles,
     roster: initialClasses[initialClass].roster,
@@ -324,6 +345,22 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     setConfigOpen: (open) => set({ configOpen: open }),
     setLottoOpen: (open) => set({ lottoOpen: open }),
     setAiGameOpen: (open) => set({ aiGameOpen: open }),
+
+    addMasterPrize: (prize) =>
+      set((s) => ({ masterPrizes: [...s.masterPrizes, prize] })),
+
+    updateMasterPrize: (id, updates) =>
+      set((s) => ({
+        masterPrizes: s.masterPrizes.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      })),
+
+    deleteMasterPrize: (id) =>
+      set((s) => ({ masterPrizes: s.masterPrizes.filter((p) => p.id !== id) })),
+
+    toggleWhammy: (prizeId, isWhammy) =>
+      set((s) => ({
+        masterPrizes: s.masterPrizes.map((p) => (p.id === prizeId ? { ...p, isWhammy } : p)),
+      })),
 
     setPrizes: async (prizes) => {
       const cls = get().currentClass;
