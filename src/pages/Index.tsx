@@ -6,6 +6,7 @@ import { ConfigModal } from '@/components/ConfigModal';
 import { ParticleBackground } from '@/components/ParticleBackground';
 import { LottoWheel } from '@/components/LottoWheel';
 import { ReaganGame } from '@/components/ReaganGame';
+import { SpinnerPanel } from '@/components/SpinnerPanel';
 
 const Index = () => {
   // 2. ADD THESE LINES TO PULL IN THE DATABASE LOADER
@@ -24,6 +25,7 @@ const Index = () => {
       <ParticleBackground />
       <div className="relative z-10 flex flex-col min-h-screen max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-4 gap-3">
         <BoardHeader />
+        <SpinnerPanel />
         <div className="glass-panel flex-1 overflow-auto">
           <BoardGrid />
         </div>
