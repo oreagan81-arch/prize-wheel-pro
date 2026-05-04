@@ -198,6 +198,14 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
     }
 
     if (tile.state !== 'empty') return;
+
+    // Spinner workflow: a student is waiting to be placed
+    if (pendingStudent) {
+      const ok = assignTileToStudent(tile.id, pendingStudent);
+      if (ok) SFX.confirm();
+      return;
+    }
+
     if (selectionMode && selectedStudent) {
       const wasSelected = selectedTiles.includes(tile.id);
       toggleTileSelection(tile.id);
@@ -206,7 +214,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
     } else {
       SFX.click();
     }
-  }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection, rollPrize, revealTile, useSpins]);
+  }, [tile, selectionMode, selectedStudent, selectedTiles, toggleTileSelection, rollPrize, revealTile, useSpins, pendingStudent, assignTileToStudent]);
 
   // --- RENDER: Overlays FIRST (always mounted), then tile ---
   const renderOverlays = () => (
