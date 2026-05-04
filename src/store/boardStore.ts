@@ -20,6 +20,19 @@ export interface Prize {
 
 export type ClassName = 'homeroom' | 'math' | 'reading';
 
+export type Rarity = 'common' | 'rare' | 'legendary';
+export type Roster = 'all' | 'homeroom' | 'math' | 'reading';
+
+export interface PrizeDefinition {
+  id: string;
+  name: string;
+  imageUrl: string;
+  rarity: Rarity;
+  rosters: Roster[];
+  isWhammy: boolean;
+  stockCount: number;
+}
+
 export interface ClassData {
   tiles: Tile[];
   roster: string[];
