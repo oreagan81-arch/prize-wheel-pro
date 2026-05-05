@@ -293,6 +293,10 @@ export const ConfigModal = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="master" className="mt-3">
+            <PrizeCreationMenu />
+          </TabsContent>
+
           <TabsContent value="curriculum" className="space-y-3 mt-3">
             <div className="glass-panel p-4 rounded-xl space-y-3 border-neon-cyan/20">
               <p className="text-xs font-display text-neon-cyan tracking-wide">📚 CURRICULUM INTELLIGENCE</p>
