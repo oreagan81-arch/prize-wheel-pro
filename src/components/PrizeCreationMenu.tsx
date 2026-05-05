@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, Plus, Skull, Trophy } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Trash2, Plus, Skull, Trophy, Pencil, X, Save } from 'lucide-react';
 import { SFX } from '@/lib/sfx';
 import { toast } from 'sonner';
 
@@ -33,14 +34,18 @@ const rarityClass = (r: Rarity) =>
     : 'text-muted-foreground border-white/10';
 
 export const PrizeCreationMenu = () => {
-  const { masterPrizes, addMasterPrize, deleteMasterPrize, toggleWhammy } = useBoardStore();
+  const { masterPrizes, addMasterPrize, updateMasterPrize, deleteMasterPrize, toggleWhammy } =
+    useBoardStore();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [rarity, setRarity] = useState<Rarity>('common');
   const [rosters, setRosters] = useState<Roster[]>(['all']);
   const [isWhammy, setIsWhammy] = useState(false);
   const [stockCount, setStockCount] = useState<number>(5);
+
+  const [filterRoster, setFilterRoster] = useState<Roster>('all');
 
   const toggleRoster = (r: Roster, checked: boolean) => {
     setRosters((prev) => {
@@ -50,12 +55,26 @@ export const PrizeCreationMenu = () => {
   };
 
   const resetForm = () => {
+    setEditingId(null);
     setName('');
     setImageUrl('');
     setRarity('common');
     setRosters(['all']);
     setIsWhammy(false);
     setStockCount(5);
+  };
+
+  const startEdit = (p: PrizeDefinition) => {
+    setEditingId(p.id);
+    setName(p.name);
+    setImageUrl(p.imageUrl);
+    setRarity(p.rarity);
+    setRosters(p.rosters);
+    setIsWhammy(p.isWhammy);
+    setStockCount(p.stockCount);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSave = () => {
@@ -67,25 +86,61 @@ export const PrizeCreationMenu = () => {
       toast.error('Assign to at least one roster');
       return;
     }
-    const prize: PrizeDefinition = {
-      id: `prize_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      name: name.trim(),
-      imageUrl: imageUrl.trim(),
-      rarity,
-      rosters,
-      isWhammy,
-      stockCount: Math.max(0, Number(stockCount) || 0),
-    };
-    addMasterPrize(prize);
-    SFX.confirm();
-    toast.success(`"${prize.name}" added`);
+    const stock = Math.max(0, Number(stockCount) || 0);
+
+    if (editingId) {
+      updateMasterPrize(editingId, {
+        name: name.trim(),
+        imageUrl: imageUrl.trim(),
+        rarity,
+        rosters,
+        isWhammy,
+        stockCount: stock,
+      });
+      SFX.confirm();
+      toast.success(`"${name.trim()}" updated`);
+    } else {
+      const prize: PrizeDefinition = {
+        id: `prize_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name: name.trim(),
+        imageUrl: imageUrl.trim(),
+        rarity,
+        rosters,
+        isWhammy,
+        stockCount: stock,
+      };
+      addMasterPrize(prize);
+      SFX.confirm();
+      toast.success(`"${prize.name}" added`);
+    }
     resetForm();
   };
 
+  const visiblePrizes = masterPrizes.filter((p) => p.rosters.includes(filterRoster));
+  const isEditing = editingId !== null;
+
   return (
     <div className="space-y-4">
-      <div className="glass-panel p-4 rounded-xl border-white/10 space-y-4">
-        <p className="text-xs font-display text-neon-emerald tracking-wide">🎁 NEW PRIZE</p>
+      <div
+        className={`glass-panel p-4 rounded-xl space-y-4 ${
+          isEditing ? 'border-neon-amber/40 ring-1 ring-neon-amber/20' : 'border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <p className={`text-xs font-display tracking-wide ${isEditing ? 'text-neon-amber' : 'text-neon-emerald'}`}>
+            {isEditing ? '✏️ EDITING PRIZE' : '🎁 NEW PRIZE'}
+          </p>
+          {isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetForm}
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5 mr-1" /> Cancel
+            </Button>
+          )}
+        </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="prize-name" className="text-xs text-muted-foreground">Prize Name</Label>
@@ -172,71 +227,113 @@ export const PrizeCreationMenu = () => {
 
         <Button
           onClick={handleSave}
-          className="w-full bg-neon-emerald/20 border border-neon-emerald/50 text-neon-emerald hover:bg-neon-emerald/30"
+          className={`w-full border ${
+            isEditing
+              ? 'bg-neon-amber/20 border-neon-amber/50 text-neon-amber hover:bg-neon-amber/30'
+              : 'bg-neon-emerald/20 border-neon-emerald/50 text-neon-emerald hover:bg-neon-emerald/30'
+          }`}
         >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Save Prize
+          {isEditing ? (
+            <><Save className="w-4 h-4 mr-1.5" /> Update Prize</>
+          ) : (
+            <><Plus className="w-4 h-4 mr-1.5" /> Save Prize</>
+          )}
         </Button>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-display text-muted-foreground tracking-wide uppercase">
-            Master Prizes
+            Filter by Roster
           </p>
-          <span className="text-[10px] text-muted-foreground">{masterPrizes.length} total</span>
+          <span className="text-[10px] text-muted-foreground">
+            {visiblePrizes.length} active in <span className="capitalize text-foreground">{filterRoster}</span>
+          </span>
         </div>
 
-        {masterPrizes.length === 0 ? (
+        <ToggleGroup
+          type="single"
+          value={filterRoster}
+          onValueChange={(v) => v && setFilterRoster(v as Roster)}
+          className="grid grid-cols-4 gap-1.5"
+        >
+          {ROSTER_OPTIONS.map((opt) => (
+            <ToggleGroupItem
+              key={opt.value}
+              value={opt.value}
+              className="glass-panel border-white/10 text-xs data-[state=on]:bg-neon-emerald/20 data-[state=on]:text-neon-emerald data-[state=on]:border-neon-emerald/40"
+            >
+              {opt.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+
+        {visiblePrizes.length === 0 ? (
           <div className="glass-panel border-white/5 rounded-md px-3 py-6 text-center text-xs text-muted-foreground">
-            No prizes yet — add your first above.
+            {masterPrizes.length === 0
+              ? 'No prizes yet — add your first above.'
+              : `No prizes assigned to ${filterRoster}.`}
           </div>
         ) : (
           <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-            {masterPrizes.map((p) => (
-              <div
-                key={p.id}
-                className={`glass-panel px-3 py-2 rounded-md border ${rarityClass(p.rarity)} flex items-center gap-2`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {p.isWhammy ? (
-                      <Skull className="w-3.5 h-3.5 text-destructive shrink-0" />
-                    ) : (
-                      <Trophy className="w-3.5 h-3.5 shrink-0 opacity-60" />
-                    )}
-                    <span className="text-sm text-foreground truncate">{p.name}</span>
+            {visiblePrizes.map((p) => {
+              const isRowEditing = editingId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  className={`glass-panel px-3 py-2 rounded-md border ${rarityClass(p.rarity)} flex items-center gap-2 ${
+                    isRowEditing ? 'ring-1 ring-neon-amber/40' : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {p.isWhammy ? (
+                        <Skull className="w-3.5 h-3.5 text-destructive shrink-0" />
+                      ) : (
+                        <Trophy className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                      )}
+                      <span className="text-sm text-foreground truncate">{p.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-display capitalize">{p.rarity}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        · {p.rosters.join(', ')}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">· stock {p.stockCount}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-display capitalize">{p.rarity}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      · {p.rosters.join(', ')}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">· stock {p.stockCount}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">Whammy</span>
+                      <Switch
+                        checked={p.isWhammy}
+                        onCheckedChange={(c) => toggleWhammy(p.id, !!c)}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-neon-amber/70 hover:text-neon-amber hover:bg-neon-amber/10"
+                      onClick={() => startEdit(p)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        if (editingId === p.id) resetForm();
+                        deleteMasterPrize(p.id);
+                        toast.success('Prize removed');
+                      }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-muted-foreground">Whammy</span>
-                    <Switch
-                      checked={p.isWhammy}
-                      onCheckedChange={(c) => toggleWhammy(p.id, !!c)}
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      deleteMasterPrize(p.id);
-                      toast.success('Prize removed');
-                    }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
