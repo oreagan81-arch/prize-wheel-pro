@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Trash2, Plus, Skull, Trophy, Pencil, X, Save } from 'lucide-react';
+import { Trash2, Plus, Skull, Trophy, Pencil, X, Save, Sparkles, ImageIcon, Loader2 } from 'lucide-react';
 import { SFX } from '@/lib/sfx';
 import { toast } from 'sonner';
 
@@ -46,6 +46,30 @@ export const PrizeCreationMenu = () => {
   const [stockCount, setStockCount] = useState<number>(5);
 
   const [filterRoster, setFilterRoster] = useState<Roster>('all');
+  const [brainstorming, setBrainstorming] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+
+  const handleAIBrainstorm = async () => {
+    setBrainstorming(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      setName('No Homework Pass');
+      toast.success('AI suggested a prize name');
+    } finally {
+      setBrainstorming(false);
+    }
+  };
+
+  const handleAIGenerateImage = async () => {
+    setGeneratingImage(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      setImageUrl(`https://source.unsplash.com/random/200x200/?prize&sig=${Date.now()}`);
+      toast.success('AI generated an image');
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
 
   const toggleRoster = (r: Roster, checked: boolean) => {
     setRosters((prev) => {
@@ -144,13 +168,28 @@ export const PrizeCreationMenu = () => {
 
         <div className="space-y-1.5">
           <Label htmlFor="prize-name" className="text-xs text-muted-foreground">Prize Name</Label>
-          <Input
-            id="prize-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Extra Recess Pass"
-            className="bg-card/60 border-white/10 text-foreground"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="prize-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Extra Recess Pass"
+              className="bg-card/60 border-white/10 text-foreground flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleAIBrainstorm}
+              disabled={brainstorming}
+              className="bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple/30 shrink-0"
+              title="Brainstorm AI Ideas"
+            >
+              {brainstorming ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><Sparkles className="w-4 h-4 mr-1.5" /> Brainstorm</>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -215,14 +254,37 @@ export const PrizeCreationMenu = () => {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="image-url" className="text-xs text-muted-foreground">Image URL (AI generation coming soon)</Label>
-          <Input
-            id="image-url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="bg-card/60 border-white/10 text-foreground"
-          />
+          <Label htmlFor="image-url" className="text-xs text-muted-foreground">Image URL</Label>
+          <div className="flex gap-2">
+            <Input
+              id="image-url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://..."
+              className="bg-card/60 border-white/10 text-foreground flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleAIGenerateImage}
+              disabled={generatingImage}
+              className="bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/30 shrink-0"
+              title="Generate AI Image"
+            >
+              {generatingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><ImageIcon className="w-4 h-4 mr-1.5" /> Generate</>
+              )}
+            </Button>
+          </div>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Prize preview"
+              className="mt-2 h-20 w-20 rounded-md object-cover border border-white/10"
+              onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+            />
+          )}
         </div>
 
         <Button
