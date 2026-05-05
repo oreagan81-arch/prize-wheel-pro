@@ -46,6 +46,30 @@ export const PrizeCreationMenu = () => {
   const [stockCount, setStockCount] = useState<number>(5);
 
   const [filterRoster, setFilterRoster] = useState<Roster>('all');
+  const [brainstorming, setBrainstorming] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+
+  const handleAIBrainstorm = async () => {
+    setBrainstorming(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      setName('No Homework Pass');
+      toast.success('AI suggested a prize name');
+    } finally {
+      setBrainstorming(false);
+    }
+  };
+
+  const handleAIGenerateImage = async () => {
+    setGeneratingImage(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      setImageUrl(`https://source.unsplash.com/random/200x200/?prize&sig=${Date.now()}`);
+      toast.success('AI generated an image');
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
 
   const toggleRoster = (r: Roster, checked: boolean) => {
     setRosters((prev) => {
