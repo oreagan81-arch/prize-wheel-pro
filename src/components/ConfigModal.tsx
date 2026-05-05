@@ -22,10 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Trophy, RotateCcw, Wand2, Loader2, BookOpen, Save, Check } from 'lucide-react';
+import { Users, Trophy, RotateCcw, Wand2, Loader2, BookOpen, Save, Check, Gift } from 'lucide-react';
 import { callPrizeBoardAI } from '@/lib/ai';
 import { SFX } from '@/lib/sfx';
 import { toast } from 'sonner';
+import { PrizeCreationMenu } from './PrizeCreationMenu';
 
 function parseRoster(raw: string): string[] {
   const lines = raw
@@ -196,6 +197,10 @@ export const ConfigModal = () => {
               <Trophy className="w-4 h-4 mr-1.5" />
               Prizes
             </TabsTrigger>
+            <TabsTrigger value="master" className="flex-1 data-[state=active]:bg-neon-emerald/20 data-[state=active]:text-neon-emerald">
+              <Gift className="w-4 h-4 mr-1.5" />
+              Master
+            </TabsTrigger>
             <TabsTrigger value="curriculum" className="flex-1 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">
               <BookOpen className="w-4 h-4 mr-1.5" />
               Curriculum
@@ -286,6 +291,10 @@ export const ConfigModal = () => {
                 </div>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="master" className="mt-3">
+            <PrizeCreationMenu />
           </TabsContent>
 
           <TabsContent value="curriculum" className="space-y-3 mt-3">
