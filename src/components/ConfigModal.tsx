@@ -197,6 +197,10 @@ export const ConfigModal = () => {
               <Trophy className="w-4 h-4 mr-1.5" />
               Prizes
             </TabsTrigger>
+            <TabsTrigger value="master" className="flex-1 data-[state=active]:bg-neon-emerald/20 data-[state=active]:text-neon-emerald">
+              <Gift className="w-4 h-4 mr-1.5" />
+              Master
+            </TabsTrigger>
             <TabsTrigger value="curriculum" className="flex-1 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">
               <BookOpen className="w-4 h-4 mr-1.5" />
               Curriculum
