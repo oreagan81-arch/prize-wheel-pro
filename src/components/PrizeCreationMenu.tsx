@@ -168,13 +168,28 @@ export const PrizeCreationMenu = () => {
 
         <div className="space-y-1.5">
           <Label htmlFor="prize-name" className="text-xs text-muted-foreground">Prize Name</Label>
-          <Input
-            id="prize-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Extra Recess Pass"
-            className="bg-card/60 border-white/10 text-foreground"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="prize-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Extra Recess Pass"
+              className="bg-card/60 border-white/10 text-foreground flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleAIBrainstorm}
+              disabled={brainstorming}
+              className="bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple/30 shrink-0"
+              title="Brainstorm AI Ideas"
+            >
+              {brainstorming ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><Sparkles className="w-4 h-4 mr-1.5" /> Brainstorm</>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
