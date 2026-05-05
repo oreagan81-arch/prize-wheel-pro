@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Trash2, Plus, Skull, Trophy, Pencil, X, Save } from 'lucide-react';
+import { Trash2, Plus, Skull, Trophy, Pencil, X, Save, Sparkles, ImageIcon, Loader2 } from 'lucide-react';
 import { SFX } from '@/lib/sfx';
 import { toast } from 'sonner';
 
