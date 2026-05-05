@@ -254,14 +254,37 @@ export const PrizeCreationMenu = () => {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="image-url" className="text-xs text-muted-foreground">Image URL (AI generation coming soon)</Label>
-          <Input
-            id="image-url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="bg-card/60 border-white/10 text-foreground"
-          />
+          <Label htmlFor="image-url" className="text-xs text-muted-foreground">Image URL</Label>
+          <div className="flex gap-2">
+            <Input
+              id="image-url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://..."
+              className="bg-card/60 border-white/10 text-foreground flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleAIGenerateImage}
+              disabled={generatingImage}
+              className="bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/30 shrink-0"
+              title="Generate AI Image"
+            >
+              {generatingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><ImageIcon className="w-4 h-4 mr-1.5" /> Generate</>
+              )}
+            </Button>
+          </div>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Prize preview"
+              className="mt-2 h-20 w-20 rounded-md object-cover border border-white/10"
+              onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+            />
+          )}
         </div>
 
         <Button
