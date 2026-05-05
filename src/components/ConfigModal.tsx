@@ -22,10 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Trophy, RotateCcw, Wand2, Loader2, BookOpen, Save, Check } from 'lucide-react';
+import { Users, Trophy, RotateCcw, Wand2, Loader2, BookOpen, Save, Check, Gift } from 'lucide-react';
 import { callPrizeBoardAI } from '@/lib/ai';
 import { SFX } from '@/lib/sfx';
 import { toast } from 'sonner';
+import { PrizeCreationMenu } from './PrizeCreationMenu';
 
 function parseRoster(raw: string): string[] {
   const lines = raw
