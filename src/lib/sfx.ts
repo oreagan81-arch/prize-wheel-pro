@@ -177,4 +177,31 @@ export const SFX = {
     const now = Tone.now();
     chordSynth.triggerAttackRelease(['A3', 'E4'], '1n', now);
   },
+
+  /** Common prize win — short cheerful chime */
+  playCommonWin: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    chordSynth.triggerAttackRelease(['C5', 'E5', 'G5'], '8n', now);
+  },
+
+  /** Rare prize win — golden two-step fanfare */
+  playRareWin: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    chordSynth.triggerAttackRelease(['G4', 'B4', 'D5'], '4n', now);
+    chordSynth.triggerAttackRelease(['C5', 'E5', 'G5', 'B5'], '2n', now + 0.25);
+  },
+
+  /** Legendary prize win — epic ascending fanfare */
+  playLegendaryWin: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    revealSynth.triggerAttackRelease('C4', '8n', now);
+    revealSynth.triggerAttackRelease('E4', '8n', now + 0.12);
+    revealSynth.triggerAttackRelease('G4', '8n', now + 0.24);
+    revealSynth.triggerAttackRelease('C5', '8n', now + 0.36);
+    chordSynth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5', 'E5'], '1n', now + 0.5);
+    chordSynth.triggerAttackRelease(['G4', 'B4', 'D5', 'G5'], '2n', now + 1.2);
+  },
 };
