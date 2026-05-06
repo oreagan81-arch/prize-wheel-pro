@@ -175,6 +175,33 @@ export const BoardHeader = () => {
 
       {/* Actions */}
       <div className="flex gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="glass-panel border-neon-emerald/30 text-neon-emerald hover:bg-neon-emerald/10 hover:text-neon-emerald"
+            >
+              <Wand2 className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Generate Board</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="glass-panel-strong border-white/10">
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-display tracking-wide">
+              ROSTER
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-white/10" />
+            {ROSTER_CHOICES.map((r) => (
+              <DropdownMenuItem
+                key={r.value}
+                onClick={() => handleGenerate(r.value)}
+                className="cursor-pointer focus:bg-neon-emerald/10 focus:text-neon-emerald"
+              >
+                {r.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           size="sm"
           variant="ghost"
