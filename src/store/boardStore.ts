@@ -363,6 +363,45 @@ export const useBoardStore = create<BoardState>()((set, get) => {
         masterPrizes: s.masterPrizes.map((p) => (p.id === prizeId ? { ...p, isWhammy } : p)),
       })),
 
+    generateBoard: (selectedRoster) =>
+      set((s) => {
+        // Filter prizes available for this roster (always include 'all'-tagged prizes)
+        const available = s.masterPrizes.filter(
+          (p) =>
+            p.rosters.includes(selectedRoster) ||
+            (selectedRoster !== 'all' && p.rosters.includes('all'))
+        );
+
+        // Build a weighted pool from stockCount (whammies included).
+        const pool: PrizeDefinition[] = [];
+        available.forEach((p) => {
+          const n = Math.max(1, p.stockCount || 1);
+          for (let i = 0; i < n; i++) pool.push(p);
+        });
+
+        const newTiles: Tile[] = Array.from({ length: 100 }, (_, i) => {
+          const tile: Tile = {
+            id: i + 1,
+            state: 'empty' as TileState,
+            isBomb: false,
+          };
+          if (pool.length > 0) {
+            const pick = pool[Math.floor(Math.random() * pool.length)];
+            tile.prize = pick.name;
+            tile.isBomb = pick.isWhammy;
+          }
+          return tile;
+        });
+
+        return {
+          ...updateCurrentClass(s, () => ({ tiles: newTiles, spins: 0 })),
+          selectedStudent: null,
+          selectionMode: false,
+          selectedTiles: [],
+          pendingStudent: null,
+        };
+      }),
+
     setPrizes: async (prizes) => {
       const cls = get().currentClass;
       set((s) => updateClass(s, cls, () => ({ prizes })));
