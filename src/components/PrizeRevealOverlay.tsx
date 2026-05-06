@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useCallback, useEffect } from 'react';
 import { callPrizeBoardAI } from '@/lib/ai';
 import type { PrizeDefinition, Rarity } from '@/store/boardStore';
+import { WhammyReveal } from './WhammyReveal';
 
 interface PrizeRevealOverlayProps {
   open: boolean;
@@ -59,6 +60,11 @@ export const PrizeRevealOverlay = ({
   };
 
   if (!open) return null;
+
+  // Whammy bypasses all standard celebration
+  if (isWhammy) {
+    return <WhammyReveal studentName={studentName} baitPrizeName={prizeName} baitPrizeEmoji={prizeEmoji} onClose={handleClose} />;
+  }
 
   // ============== Rarity-driven styles ==============
   const showSunburst = rarity === 'legendary' && !isWhammy;
