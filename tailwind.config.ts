@@ -88,6 +88,8 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "spin-slow": "spin 8s linear infinite",
+        "pulse-slow": "pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite",
       },
     },
   },
