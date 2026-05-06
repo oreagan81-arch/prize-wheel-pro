@@ -92,6 +92,7 @@ interface BoardState {
   updateMasterPrize: (id: string, updates: Partial<PrizeDefinition>) => void;
   deleteMasterPrize: (id: string) => void;
   toggleWhammy: (prizeId: string, isWhammy: boolean) => void;
+  generateBoard: (selectedRoster: Roster) => void;
 
   loadFromDatabase: (cls?: ClassName) => Promise<void>;
   isClassHydrated: (cls?: ClassName) => boolean;
