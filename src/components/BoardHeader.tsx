@@ -48,7 +48,29 @@ export const BoardHeader = () => {
     setAiGameOpen,
     initBoard,
     tiles,
+    generateBoard,
+    masterPrizes,
   } = useBoardStore();
+
+  const ROSTER_CHOICES: { value: Roster; label: string }[] = [
+    { value: 'all', label: '🌐 All' },
+    { value: 'homeroom', label: '🏠 Homeroom' },
+    { value: 'math', label: '🔢 Math' },
+    { value: 'reading', label: '📖 Reading' },
+  ];
+
+  const handleGenerate = (roster: Roster) => {
+    const available = masterPrizes.filter(
+      (p) => p.rosters.includes(roster) || (roster !== 'all' && p.rosters.includes('all'))
+    );
+    if (available.length === 0) {
+      toast.error(`No master prizes available for "${roster}". Add some in Settings → Master.`);
+      return;
+    }
+    generateBoard(roster);
+    SFX.confirm();
+    toast.success(`🎲 New board generated for ${roster} (${available.length} prize types)`);
+  };
 
   const emptyTilesLeft = tiles.filter((t) => t.state === 'empty').length;
 
