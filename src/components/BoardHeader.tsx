@@ -1,8 +1,16 @@
-import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boardStore';
+import { useBoardStore, CLASS_NAMES, classLabels, ClassName, type Roster } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3 } from 'lucide-react';
+import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { InventoryPanel } from './InventoryPanel';
 import {
   Select,
