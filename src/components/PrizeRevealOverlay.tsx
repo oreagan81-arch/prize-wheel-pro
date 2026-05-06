@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useCallback, useEffect } from 'react';
 import { callPrizeBoardAI } from '@/lib/ai';
 import type { PrizeDefinition, Rarity } from '@/store/boardStore';
+import { WhammyReveal } from './WhammyReveal';
 
 interface PrizeRevealOverlayProps {
   open: boolean;
