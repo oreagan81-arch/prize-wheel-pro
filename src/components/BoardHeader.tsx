@@ -1,8 +1,16 @@
-import { useBoardStore, CLASS_NAMES, classLabels, ClassName } from '@/store/boardStore';
+import { useBoardStore, CLASS_NAMES, classLabels, ClassName, type Roster } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3 } from 'lucide-react';
+import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { InventoryPanel } from './InventoryPanel';
 import {
   Select,
@@ -40,7 +48,29 @@ export const BoardHeader = () => {
     setAiGameOpen,
     initBoard,
     tiles,
+    generateBoard,
+    masterPrizes,
   } = useBoardStore();
+
+  const ROSTER_CHOICES: { value: Roster; label: string }[] = [
+    { value: 'all', label: '🌐 All' },
+    { value: 'homeroom', label: '🏠 Homeroom' },
+    { value: 'math', label: '🔢 Math' },
+    { value: 'reading', label: '📖 Reading' },
+  ];
+
+  const handleGenerate = (roster: Roster) => {
+    const available = masterPrizes.filter(
+      (p) => p.rosters.includes(roster) || (roster !== 'all' && p.rosters.includes('all'))
+    );
+    if (available.length === 0) {
+      toast.error(`No master prizes available for "${roster}". Add some in Settings → Master.`);
+      return;
+    }
+    generateBoard(roster);
+    SFX.confirm();
+    toast.success(`🎲 New board generated for ${roster} (${available.length} prize types)`);
+  };
 
   const emptyTilesLeft = tiles.filter((t) => t.state === 'empty').length;
 
@@ -145,6 +175,33 @@ export const BoardHeader = () => {
 
       {/* Actions */}
       <div className="flex gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="glass-panel border-neon-emerald/30 text-neon-emerald hover:bg-neon-emerald/10 hover:text-neon-emerald"
+            >
+              <Wand2 className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Generate Board</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="glass-panel-strong border-white/10">
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-display tracking-wide">
+              ROSTER
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-white/10" />
+            {ROSTER_CHOICES.map((r) => (
+              <DropdownMenuItem
+                key={r.value}
+                onClick={() => handleGenerate(r.value)}
+                className="cursor-pointer focus:bg-neon-emerald/10 focus:text-neon-emerald"
+              >
+                {r.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           size="sm"
           variant="ghost"
