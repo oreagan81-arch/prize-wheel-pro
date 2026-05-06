@@ -61,6 +61,11 @@ export const PrizeRevealOverlay = ({
 
   if (!open) return null;
 
+  // Whammy bypasses all standard celebration
+  if (isWhammy) {
+    return <WhammyReveal studentName={studentName} baitPrizeName={prizeName} baitPrizeEmoji={prizeEmoji} onClose={handleClose} />;
+  }
+
   // ============== Rarity-driven styles ==============
   const showSunburst = rarity === 'legendary' && !isWhammy;
 
