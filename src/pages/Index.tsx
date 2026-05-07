@@ -7,6 +7,7 @@ import { ParticleBackground } from '@/components/ParticleBackground';
 import { LottoWheel } from '@/components/LottoWheel';
 import { ReaganGame } from '@/components/ReaganGame';
 import { SpinnerPanel } from '@/components/SpinnerPanel';
+import { SecretStopButton } from '@/components/SecretStopButton';
 
 const Index = () => {
   const loadFromDatabase = useBoardStore((state: any) => state.loadFromDatabase);
@@ -25,6 +26,7 @@ const Index = () => {
         <div className="relative z-10 w-full h-full p-2 sm:p-4">
           <BoardGrid />
         </div>
+        {boardSpinMode === 'spinning' && <SecretStopButton />}
       </div>
     );
   }

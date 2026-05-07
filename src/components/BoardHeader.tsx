@@ -1,7 +1,7 @@
 import { useBoardStore, CLASS_NAMES, classLabels, ClassName, type Roster } from '@/store/boardStore';
 import { SFX } from '@/lib/sfx';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3, Wand2 } from 'lucide-react';
+import { Settings, Zap, Dices, Sparkles, UserPlus, Check, X, RotateCcw, Dice3, Wand2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -51,6 +51,10 @@ export const BoardHeader = () => {
     generateBoard,
     masterPrizes,
   } = useBoardStore();
+
+  const boardSpinMode = useBoardStore((s) => s.boardSpinMode);
+  const remainingSpins = useBoardStore((s) => s.remainingSpins);
+  const startBoardSpin = useBoardStore((s) => s.startBoardSpin);
 
   const ROSTER_CHOICES: { value: Roster; label: string }[] = [
     { value: 'all', label: '🌐 All' },
@@ -175,6 +179,16 @@ export const BoardHeader = () => {
 
       {/* Actions */}
       <div className="flex gap-2">
+        {boardSpinMode === 'idle' && remainingSpins > 0 && (
+          <Button
+            size="sm"
+            onClick={() => { startBoardSpin(); SFX.mystical(); }}
+            className="bg-neon-amber/20 border border-neon-amber/60 text-neon-amber hover:bg-neon-amber/30 animate-pulse"
+          >
+            <Play className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Start Spin ({remainingSpins})</span>
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
