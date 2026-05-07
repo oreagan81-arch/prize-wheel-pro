@@ -8,6 +8,8 @@ import { LottoWheel } from '@/components/LottoWheel';
 import { ReaganGame } from '@/components/ReaganGame';
 import { SpinnerPanel } from '@/components/SpinnerPanel';
 import { SecretStopButton } from '@/components/SecretStopButton';
+import { MissOverlay } from '@/components/MissOverlay';
+import { BoardSpinReveal } from '@/components/BoardSpinReveal';
 
 const Index = () => {
   const loadFromDatabase = useBoardStore((state: any) => state.loadFromDatabase);
@@ -27,6 +29,8 @@ const Index = () => {
           <BoardGrid />
         </div>
         {boardSpinMode === 'spinning' && <SecretStopButton />}
+        <MissOverlay />
+        <BoardSpinReveal />
       </div>
     );
   }
@@ -47,6 +51,8 @@ const Index = () => {
       <ConfigModal />
       <LottoWheel />
       <ReaganGame />
+      <MissOverlay />
+      <BoardSpinReveal />
     </div>
   );
 };

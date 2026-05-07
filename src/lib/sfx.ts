@@ -204,4 +204,14 @@ export const SFX = {
     chordSynth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5', 'E5'], '1n', now + 0.5);
     chordSynth.triggerAttackRelease(['G4', 'B4', 'D5', 'G5'], '2n', now + 1.2);
   },
+
+  /** Empty tile / miss — descending womp-womp buzzer */
+  playMiss: async () => {
+    await ensureAudio();
+    const now = Tone.now();
+    clickSynth.triggerAttackRelease('C4', '4n', now);
+    clickSynth.triggerAttackRelease('B3', '4n', now + 0.18);
+    clickSynth.triggerAttackRelease('Bb3', '4n', now + 0.36);
+    clickSynth.triggerAttackRelease('A3', '2n', now + 0.54);
+  },
 };
