@@ -99,6 +99,12 @@ interface BoardState {
   toggleWhammy: (prizeId: string, isWhammy: boolean) => void;
   generateBoard: (selectedRoster: Roster) => void;
 
+  setRemainingSpins: (count: number) => void;
+  startBoardSpin: () => void;
+  setHighlightedTileId: (id: number | null) => void;
+  stopBoardSpin: (finalTileId: number) => void;
+  resetSpinMode: () => void;
+
   loadFromDatabase: (cls?: ClassName) => Promise<void>;
   isClassHydrated: (cls?: ClassName) => boolean;
 }
