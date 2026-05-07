@@ -34,6 +34,11 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
   const prizes = useBoardStore((s) => s.prizes);
   const useSpins = useBoardStore((s) => s.useSpins);
   const spins = useBoardStore((s) => s.spins);
+  const highlightedTileId = useBoardStore((s) => s.highlightedTileId);
+  const isHighlighted = highlightedTileId === tileId;
+  const highlightClass = isHighlighted
+    ? 'ring-4 ring-yellow-400 z-50 drop-shadow-[0_0_15px_rgba(250,204,21,0.9)] !transition-none'
+    : '';
   const ref = useRef<HTMLDivElement>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealedPrize, setRevealedPrize] = useState<{ name: string; emoji: string; rare: boolean } | null>(null);
@@ -364,7 +369,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
             : tile.isTrapped
             ? 'bg-destructive/10 border border-destructive/20 void-pulse'
             : 'bg-void/80 border border-white/5 void-pulse'
-        }`}>
+        } ${highlightClass}`}>
           <span className={`font-display text-xs ${
             tile.prize === '💣 BOMB' ? 'text-destructive/60' :
             tile.isTrapped ? 'text-destructive/40' :
@@ -387,7 +392,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
           whileTap={{ scale: 0.95 }}
           onClick={handleClick}
           style={{ minWidth: 44, minHeight: 44 }}
-          className="aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer will-change-transform"
+          className={`aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer will-change-transform ${highlightClass}`}
         >
           <div className="tile-shimmer absolute inset-0" />
           <span className="text-[10px] text-muted-foreground font-display relative z-10">{tile.id}</span>
@@ -419,6 +424,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
             : 'bg-slate-800/60 border-white/15 hover:border-neon-emerald/40'
           }
           ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
+          ${highlightClass}
         `}
       >
         <span className={`font-display text-2xl sm:text-3xl font-black ${isSelected ? 'text-neon-emerald' : 'text-white/95'}`}>

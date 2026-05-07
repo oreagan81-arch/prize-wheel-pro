@@ -9,17 +9,26 @@ import { ReaganGame } from '@/components/ReaganGame';
 import { SpinnerPanel } from '@/components/SpinnerPanel';
 
 const Index = () => {
-  // 2. ADD THESE LINES TO PULL IN THE DATABASE LOADER
   const loadFromDatabase = useBoardStore((state: any) => state.loadFromDatabase);
   const currentClass = useBoardStore((state: any) => state.currentClass);
+  const boardSpinMode = useBoardStore((s) => s.boardSpinMode);
+  const isSpinFullscreen = boardSpinMode !== 'idle';
 
-  // 3. ADD THIS USEEFFECT BLOCK
-  // This says: "When the app opens, or when the class changes, run the database loader."
   useEffect(() => {
     loadFromDatabase();
   }, [currentClass, loadFromDatabase]);
 
-  // Everything below here stays exactly the same
+  if (isSpinFullscreen) {
+    return (
+      <div className="fixed inset-0 w-screen h-screen bg-background z-[60] overflow-hidden">
+        <ParticleBackground />
+        <div className="relative z-10 w-full h-full p-2 sm:p-4">
+          <BoardGrid />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <ParticleBackground />
