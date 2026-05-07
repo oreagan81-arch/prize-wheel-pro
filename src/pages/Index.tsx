@@ -7,6 +7,7 @@ import { ParticleBackground } from '@/components/ParticleBackground';
 import { LottoWheel } from '@/components/LottoWheel';
 import { ReaganGame } from '@/components/ReaganGame';
 import { SpinnerPanel } from '@/components/SpinnerPanel';
+import { SecretStopButton } from '@/components/SecretStopButton';
 
 const Index = () => {
   const loadFromDatabase = useBoardStore((state: any) => state.loadFromDatabase);
