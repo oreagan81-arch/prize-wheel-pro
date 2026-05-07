@@ -29,6 +29,8 @@ const Index = () => {
           <BoardGrid />
         </div>
         {boardSpinMode === 'spinning' && <SecretStopButton />}
+        <MissOverlay />
+        <BoardSpinReveal />
       </div>
     );
   }
