@@ -51,6 +51,8 @@ const Index = () => {
       <ConfigModal />
       <LottoWheel />
       <ReaganGame />
+      <MissOverlay />
+      <BoardSpinReveal />
     </div>
   );
 };
