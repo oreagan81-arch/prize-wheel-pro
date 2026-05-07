@@ -58,6 +58,11 @@ interface BoardState {
 
   masterPrizes: PrizeDefinition[];
 
+  // Board spin (Press Your Luck) state
+  boardSpinMode: 'idle' | 'spinning' | 'revealing' | 'miss';
+  highlightedTileId: number | null;
+  remainingSpins: number;
+
   // Derived accessors
   tiles: Tile[];
   roster: string[];
