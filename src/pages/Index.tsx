@@ -26,6 +26,7 @@ const Index = () => {
         <div className="relative z-10 w-full h-full p-2 sm:p-4">
           <BoardGrid />
         </div>
+        {boardSpinMode === 'spinning' && <SecretStopButton />}
       </div>
     );
   }
