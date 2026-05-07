@@ -179,6 +179,16 @@ export const BoardHeader = () => {
 
       {/* Actions */}
       <div className="flex gap-2">
+        {boardSpinMode === 'idle' && remainingSpins > 0 && (
+          <Button
+            size="sm"
+            onClick={() => { startBoardSpin(); SFX.mystical(); }}
+            className="bg-neon-amber/20 border border-neon-amber/60 text-neon-amber hover:bg-neon-amber/30 animate-pulse"
+          >
+            <Play className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Start Spin ({remainingSpins})</span>
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
