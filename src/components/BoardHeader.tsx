@@ -52,6 +52,10 @@ export const BoardHeader = () => {
     masterPrizes,
   } = useBoardStore();
 
+  const boardSpinMode = useBoardStore((s) => s.boardSpinMode);
+  const remainingSpins = useBoardStore((s) => s.remainingSpins);
+  const startBoardSpin = useBoardStore((s) => s.startBoardSpin);
+
   const ROSTER_CHOICES: { value: Roster; label: string }[] = [
     { value: 'all', label: '🌐 All' },
     { value: 'homeroom', label: '🏠 Homeroom' },
