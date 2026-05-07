@@ -221,6 +221,10 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     hydratedClasses: { homeroom: false, math: false, reading: false },
     masterPrizes: [],
 
+    boardSpinMode: 'idle',
+    highlightedTileId: null,
+    remainingSpins: 0,
+
     tiles: initialClasses[initialClass].tiles,
     roster: initialClasses[initialClass].roster,
     prizes: initialClasses[initialClass].prizes,
