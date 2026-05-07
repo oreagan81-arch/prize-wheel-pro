@@ -34,6 +34,11 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
   const prizes = useBoardStore((s) => s.prizes);
   const useSpins = useBoardStore((s) => s.useSpins);
   const spins = useBoardStore((s) => s.spins);
+  const highlightedTileId = useBoardStore((s) => s.highlightedTileId);
+  const isHighlighted = highlightedTileId === tileId;
+  const highlightClass = isHighlighted
+    ? 'ring-4 ring-yellow-400 z-50 drop-shadow-[0_0_15px_rgba(250,204,21,0.9)] !transition-none'
+    : '';
   const ref = useRef<HTMLDivElement>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealedPrize, setRevealedPrize] = useState<{ name: string; emoji: string; rare: boolean } | null>(null);
