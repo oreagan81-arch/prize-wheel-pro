@@ -417,6 +417,25 @@ export const useBoardStore = create<BoardState>()((set, get) => {
         };
       }),
 
+    setRemainingSpins: (count) => set({ remainingSpins: Math.max(0, count) }),
+
+    startBoardSpin: () => set({ boardSpinMode: 'spinning' }),
+
+    setHighlightedTileId: (id) => set({ highlightedTileId: id }),
+
+    stopBoardSpin: (finalTileId) =>
+      set((s) => {
+        const tile = s.tiles.find((t) => t.id === finalTileId);
+        const hasStudent = !!tile?.studentName;
+        return {
+          boardSpinMode: hasStudent ? 'revealing' : 'miss',
+          highlightedTileId: finalTileId,
+          remainingSpins: Math.max(0, s.remainingSpins - 1),
+        };
+      }),
+
+    resetSpinMode: () => set({ boardSpinMode: 'idle', highlightedTileId: null }),
+
     setPrizes: async (prizes) => {
       const cls = get().currentClass;
       set((s) => updateClass(s, cls, () => ({ prizes })));
