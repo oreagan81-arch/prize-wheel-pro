@@ -424,6 +424,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
             : 'bg-slate-800/60 border-white/15 hover:border-neon-emerald/40'
           }
           ${selectionMode && selectedStudent ? 'ring-1 ring-neon-emerald/20' : ''}
+          ${highlightClass}
         `}
       >
         <span className={`font-display text-2xl sm:text-3xl font-black ${isSelected ? 'text-neon-emerald' : 'text-white/95'}`}>
