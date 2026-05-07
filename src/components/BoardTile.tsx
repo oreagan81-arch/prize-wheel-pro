@@ -369,7 +369,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
             : tile.isTrapped
             ? 'bg-destructive/10 border border-destructive/20 void-pulse'
             : 'bg-void/80 border border-white/5 void-pulse'
-        }`}>
+        } ${highlightClass}`}>
           <span className={`font-display text-xs ${
             tile.prize === '💣 BOMB' ? 'text-destructive/60' :
             tile.isTrapped ? 'text-destructive/40' :
