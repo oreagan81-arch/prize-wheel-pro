@@ -392,7 +392,7 @@ const BoardTileImpl = ({ tileId }: BoardTileProps) => {
           whileTap={{ scale: 0.95 }}
           onClick={handleClick}
           style={{ minWidth: 44, minHeight: 44 }}
-          className="aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer will-change-transform"
+          className={`aspect-square rounded-lg bg-card border border-neon-purple/30 flex flex-col items-center justify-center relative overflow-hidden neon-glow-purple cursor-pointer will-change-transform ${highlightClass}`}
         >
           <div className="tile-shimmer absolute inset-0" />
           <span className="text-[10px] text-muted-foreground font-display relative z-10">{tile.id}</span>
