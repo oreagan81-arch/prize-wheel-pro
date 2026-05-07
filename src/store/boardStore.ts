@@ -58,6 +58,11 @@ interface BoardState {
 
   masterPrizes: PrizeDefinition[];
 
+  // Board spin (Press Your Luck) state
+  boardSpinMode: 'idle' | 'spinning' | 'revealing' | 'miss';
+  highlightedTileId: number | null;
+  remainingSpins: number;
+
   // Derived accessors
   tiles: Tile[];
   roster: string[];
@@ -93,6 +98,12 @@ interface BoardState {
   deleteMasterPrize: (id: string) => void;
   toggleWhammy: (prizeId: string, isWhammy: boolean) => void;
   generateBoard: (selectedRoster: Roster) => void;
+
+  setRemainingSpins: (count: number) => void;
+  startBoardSpin: () => void;
+  setHighlightedTileId: (id: number | null) => void;
+  stopBoardSpin: (finalTileId: number) => void;
+  resetSpinMode: () => void;
 
   loadFromDatabase: (cls?: ClassName) => Promise<void>;
   isClassHydrated: (cls?: ClassName) => boolean;
@@ -209,6 +220,10 @@ export const useBoardStore = create<BoardState>()((set, get) => {
     aiGameOpen: false,
     hydratedClasses: { homeroom: false, math: false, reading: false },
     masterPrizes: [],
+
+    boardSpinMode: 'idle',
+    highlightedTileId: null,
+    remainingSpins: 0,
 
     tiles: initialClasses[initialClass].tiles,
     roster: initialClasses[initialClass].roster,
@@ -401,6 +416,25 @@ export const useBoardStore = create<BoardState>()((set, get) => {
           pendingStudent: null,
         };
       }),
+
+    setRemainingSpins: (count) => set({ remainingSpins: Math.max(0, count) }),
+
+    startBoardSpin: () => set({ boardSpinMode: 'spinning' }),
+
+    setHighlightedTileId: (id) => set({ highlightedTileId: id }),
+
+    stopBoardSpin: (finalTileId) =>
+      set((s) => {
+        const tile = s.tiles.find((t) => t.id === finalTileId);
+        const hasStudent = !!tile?.studentName;
+        return {
+          boardSpinMode: hasStudent ? 'revealing' : 'miss',
+          highlightedTileId: finalTileId,
+          remainingSpins: Math.max(0, s.remainingSpins - 1),
+        };
+      }),
+
+    resetSpinMode: () => set({ boardSpinMode: 'idle', highlightedTileId: null }),
 
     setPrizes: async (prizes) => {
       const cls = get().currentClass;
